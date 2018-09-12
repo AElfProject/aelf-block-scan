@@ -3,15 +3,15 @@
 
  Source Server         : hzz780
  Source Server Type    : MySQL
- Source Server Version : 50721
+ Source Server Version : 100309
  Source Host           : localhost:3306
  Source Schema         : aelf_test
 
  Target Server Type    : MySQL
- Target Server Version : 50721
+ Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 15/08/2018 18:37:14
+ Date: 12/09/2018 15:41:24
 */
 
 SET NAMES utf8mb4;
@@ -73,6 +73,7 @@ CREATE TABLE `transactions_0` (
   `block_hash` varchar(255) NOT NULL,
   `increment_id` bigint(20) NOT NULL,
   `quantity` bigint(20) NOT NULL,
+  `tx_status` varchar(255) NOT NULL,
   PRIMARY KEY (`tx_id`,`params_to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

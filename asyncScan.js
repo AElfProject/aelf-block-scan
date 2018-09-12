@@ -4,24 +4,24 @@
  */
 
 // TODO
-// 1. 目前我的电脑只能跑10~20个block每秒，2.8 GHz Intel Core i7， 16 GB 2133 MHz LPDDR3  待优化。
+// 1. 目前我的电脑大概每1~2秒处理100个块，2.8 GHz Intel Core i7， 16 GB 2133 MHz LPDDR3  待优化。
 // 2. 优化过程中，两个insert的 事务操作需要补充完毕。
 // 3. 需要增加检查, 每隔一段时间，或者多少次循环后，需要check一次是否有未入库的块。
+// 4. let blockList = await connection.query('select block_height from blocks_0', []); 需要优化，当区块数到百万千万级别时，如何分页处理。
 
 let config = require('./config.js');
 const Aelf = require('aelf-sdk');
 const fs = require('fs');
-const path = require('path');
 const rds = require('ali-rds');
 const log4js = require('log4js');
 const { blockInfoFormat, transactionFormat } = require('./lib/format.js');
-const { insertTransactions, insertBlock, insertContract } = require('./lib/insert.js');
+const { insertTransactions, insertBlock } = require('./lib/insert.js');
 const missingList = require('./lib/missingList');
 
 log4js.configure(config.log4js);
 const logger = log4js.getLogger('scan');
 
-let aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:1234"));
+let aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:1234/chain"));
 let scanLimit = config.scanLimit;
 let scanTimerReady = false;
 
@@ -30,14 +30,13 @@ aelf.chain.connectChain(err => {
         logger.error('aelf.chain.connectChain err: ', err);
     }
     let wallet = Aelf.wallet.getWalletByPrivateKey('f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71');
-    let tokenc = aelf.chain.contractAt('0x358d01d001cd97775e7b7f32fd03f7f28c0a', wallet);
+    let tokenc = aelf.chain.contractAt('0xb9b740fd25f2de8f336c83528a9ed7252bf0', wallet);
 
     let aelf0 = rds(config.mysql.aelf0);
     startScan(aelf0, scanLimit);
 
     // let connection = aelf0;
     // startScan(connection, scanLimit);
-    
 });
 
 // 统计用
@@ -56,7 +55,7 @@ let scanABlock = function(listIndex, connection) {
                 });
             }
 
-            let tran = await connection.beginTransaction();
+            // let tran = await connection.beginTransaction();
 
             try {
                 let blockInfo = result.result;
@@ -84,16 +83,25 @@ let scanABlock = function(listIndex, connection) {
                         }));
                     }
 
-                    Promise.all(transactionPromises).then(result => {
+                    Promise.all(transactionPromises).then(async (result) => {
                         transactionsDetail = result.map(item => {
                             return transactionFormat(item.result, blockInfoFormatted);
                         });
+                        let tran = await connection.beginTransaction();
+                        try {
+                            // TODO: 这里还有问题。  两个insert过程发生了问题，无法回滚。
+                            insertTransactions(transactionsDetail, connection, 'transactions_0');
+                            insertBlock(blockInfoFormatted, connection, 'blocks_0');
+                            tran.commit();
 
-                        // TODO: 这里还有问题。  两个insert过程发生了问题，无法回滚。
-                        insertTransactions(transactionsDetail, connection, 'transactions_0');
-                        insertBlock(blockInfoFormatted, connection, 'blocks_0');
+                        } catch (err) {
+                            tran.rollback();
+                            resolve({
+                                err: err,
+                                result: result
+                            });
+                        }
 
-                        tran.commit();
 
                         resolve({
                             err: err,
@@ -101,8 +109,7 @@ let scanABlock = function(listIndex, connection) {
                         });
                     }).catch(err => {
                         console.log('transactionPromises rollback:', listIndex);
-                        tran.rollback();
-
+                        // tran.rollback();
                         resolve({
                             err: err,
                             result: result
@@ -110,9 +117,11 @@ let scanABlock = function(listIndex, connection) {
                     });
                 } else {
                     // 创世区块没有交易？
-                    if (listIndex === 0) {
-                        insertBlock(blockInfoFormatted, connection, 'blocks_0');
-                    }
+                    // 2018.09.03。。。创世区块get_block_info有问题，暂时不读取了, 其它块有无交易的情况发生。
+                    // if (listIndex === 0) {
+                    //     insertBlock(blockInfoFormatted, connection, 'blocks_0');
+                    // }
+                    insertBlock(blockInfoFormatted, connection, 'blocks_0');
 
                     resolve({
                         err: err,
@@ -120,7 +129,7 @@ let scanABlock = function(listIndex, connection) {
                     });
                 }
             } catch (error) {
-                tran.rollback();
+                // tran.rollback();
 
                 resolve({
                     err: err,
@@ -167,9 +176,12 @@ function scanTimerInit (connection, scanLimit) {
 async function subscribe(connection, scanLimit) {
 
     // 我的mbp, egg和node都在本机，200毫秒上下
-    let result = await connection.query('select block_height from transactions_0 ORDER BY block_height DESC limit 1');
+    // let result = await connection.query('select block_height from transactions_0 ORDER BY block_height DESC limit 1');
+    let result = await connection.query('select block_height from blocks_0 ORDER BY block_height DESC limit 1');
 
-    let blockHeightInDataBase = 0;
+    // 2018.09.03, 高度为0的区块，始终返回invalid BlockHeight
+    // let blockHeightInDataBase = 0;
+    let blockHeightInDataBase = 1;
     if (result && result[0] && result[0].block_height) {
         blockHeightInDataBase = parseInt(result[0].block_height, 10);
     }
@@ -186,11 +198,14 @@ async function subscribe(connection, scanLimit) {
     scanTimerReady = false;
 
     let max = Math.min(blockHeightInDataBase + scanLimit, blockHeightInChain);
+    // let max = Math.min(blockHeightInDataBase + scanLimit, 100);
     // let max = Math.min(start + limit, blockHeightInChain);
+    // max = 100;
 
     const promises = [];
 
     // for (let i = start; i < max; i++) {
+    // for (let i = blockHeightInDataBase; i <= max; i++) {
     for (let i = blockHeightInDataBase; i <= max; i++) {
         // console.log('block i: ', i);
         promises.push(scanABlock(i, connection));
@@ -233,12 +248,13 @@ async function startScan(connection, scanLimit) {
         return scanABlock(item, connection);
     });
 
-    Promise.all(scanABlockPromises).then(async result => {
+    Promise.all(scanABlockPromises).then(async () => {
         let endTime = new Date().getTime();
         console.log('endTime: ', endTime - startTime, 'scanTime: ', scanTime);
 
         let blockList = await connection.query('select block_height from blocks_0', []);
         let list = missingList.getBlockMissingList(blockList);
+        console.log('list.length: ', list.length);
         if (list.length) {
             console.log('missingList: ', list);
             startScan(connection, scanLimit);

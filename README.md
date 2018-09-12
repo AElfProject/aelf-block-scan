@@ -2,3 +2,6 @@
 ### add your own config
 
 ### pm2 start asyncCcan.js
+
+
+### procfile 是pandora自动生成的。

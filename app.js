@@ -288,7 +288,7 @@ function insertContract(transaction, database, table) {
     // });
 }
 
-let aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:1234"));
+let aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:1234/chain"));
 aelf.chain.connectChain();
 let wallet = Aelf.wallet.getWalletByPrivateKey('f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71');
 var aelf0 = rds(config.mysql.aelf0);
