@@ -30,17 +30,41 @@ let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
 let scanLimit = config.scanLimit;
 let scanTimerReady = false;
 
-aelf.chain.connectChain(err => {
-    if (err) {
-        logger.error('aelf.chain.connectChain err: ', err);
+// 这个，然后再套上PM2...
+// http://nodejs.cn/api/process.html#process_event_uncaughtexception
+// 官方并不建议当做 On Error Resume Next的机制。
+let restartTime = 0;
+process.on('uncaughtException', (err) => {
+    if (!err.toString().match('Invalid JSON RPC response')) {
+        return;
     }
-    let wallet = Aelf.wallet.getWalletByPrivateKey(config.aelf.commonPrivateKey);
-    let tokenc = aelf.chain.contractAt(config.aelf.contract, wallet);
-
-    // let aelf0
-    var aelfPool  = mysql.createPool(config.mysql.aelf0);
-    startScan(aelfPool, scanLimit);
+    // 针对这个error重启
+    // Error: Invalid JSON RPC response: undefined
+    console.log('捕获到异常, 5分钟后重启: ', err);
+    restartTime++;
+    setTimeout(() => {
+        console.log(`第 ${restartTime} 次重启中》》》》》》》》》》`);
+        init();
+    }, 1000 * 60 * 5);
 });
+
+init();
+
+function init() {
+    aelf.chain.connectChain(err => {
+        if (err) {
+            logger.error('aelf.chain.connectChain err: ', err);
+        }
+        let wallet = Aelf.wallet.getWalletByPrivateKey(config.aelf.commonPrivateKey);
+        let tokenc = aelf.chain.contractAt(config.aelf.contract, wallet);
+
+        // let aelf0
+        var aelfPool  = mysql.createPool(config.mysql.aelf0);
+        startScan(aelfPool, scanLimit);
+
+    });
+}
+
 
 // 统计用
 let scanTime = 0;
