@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 12/09/2018 15:41:24
+ Date: 18/09/2018 20:09:43
 */
 
 SET NAMES utf8mb4;
@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS `address_contracts`;
 CREATE TABLE `address_contracts` (
   `address` varchar(255) NOT NULL,
   `contract_address` varchar(255) NOT NULL,
+  `update_time` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`address`,`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
