@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 18/09/2018 20:09:43
+ Date: 19/09/2018 17:11:58
 */
 
 SET NAMES utf8mb4;
@@ -50,6 +50,8 @@ CREATE TABLE `blocks_0` (
 DROP TABLE IF EXISTS `contract_aelf20`;
 CREATE TABLE `contract_aelf20` (
   `contract_address` varchar(255) NOT NULL,
+  `chain_id` varchar(255) NOT NULL,
+  `block_hash` varchar(255) NOT NULL,
   `tx_id` varchar(255) NOT NULL,
   `symbol` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
