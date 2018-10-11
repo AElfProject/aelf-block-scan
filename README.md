@@ -1,16 +1,21 @@
-### copy config.example.js config.js 
-### add your own config
+# Quicke Start
 
-### pm2 start index.js --name aelf-block-scan
+```
+npm install
+copy ./config/config.example.js ./config/config.js 
+// add your own config
+
+pm2 start index.js --name aelf-block-scan
+```
 
 ### procfile 是pandora自动生成的。暂时弃用pandora。
 
 
-### How use Docker
+# Docker
 
 Now, the Repositories of test demo is in [docker/hzz780/aelf-block-scan](https://cloud.docker.com/swarm/hzz780/repository/docker/hzz780/aelf-block-scan/general)
 
-####Demo
+#### Demo
 
 ```
 docker container run -dit \

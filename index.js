@@ -9,7 +9,8 @@
 // 3. 需要增加检查, 每隔一段时间，或者多少次循环后，需要check一次是否有未入库的块。
 // 4. let blockList = await connection.query('select block_height from blocks_0', []); 需要优化，当区块数到百万千万级别时，如何分页处理。
 
-let config = require('./config.js');
+let config = require('./config/config.local.js');
+// let config = require('./config.js');
 const Aelf = require('aelf-sdk');
 const fs = require('fs');
 const log4js = require('log4js');
@@ -56,7 +57,7 @@ function init() {
             logger.error('aelf.chain.connectChain err: ', err);
         }
         let wallet = Aelf.wallet.getWalletByPrivateKey(config.aelf.commonPrivateKey);
-        let tokenc = aelf.chain.contractAt(config.aelf.contract, wallet);
+        // let tokenc = aelf.chain.contractAt(config.aelf.contract, wallet);
 
         // let aelf0
         var aelfPool  = mysql.createPool(config.mysql.aelf0);
