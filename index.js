@@ -31,6 +31,13 @@ let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
 let scanLimit = config.scanLimit;
 let scanTimerReady = false;
 
+// NODE_ENV=production node index.js
+const env = process.env.NODE_ENV;
+console.log('env: ', env);
+if (env === 'production') {
+    console.log = function () {};    
+}
+
 // 这个，然后再套上PM2...
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
@@ -41,13 +48,18 @@ process.on('uncaughtException', (err) => {
     }
     // 针对这个error重启
     // Error: Invalid JSON RPC response: undefined
-    console.log('捕获到异常, 5分钟后重启: ', err);
+    restart(err);
+});
+
+function restart(err, info = '') {
+    logger.error(`Err: ${err}, ExtraInfo: ${info}`);
+    console.log('捕获到异常, 1分钟后重启: ', err);
     restartTime++;
     setTimeout(() => {
-        console.log(`第 ${restartTime} 次重启中》》》》》》》》》》`);
+        logger.error(`第 ${restartTime} 次重启中》》》》》》》》》》`)
         init();
-    }, 1000 * 60 * 5);
-});
+    }, 1000 * 60 * 1);
+}
 
 init();
 
@@ -82,7 +94,7 @@ async function startScan(pool, scanLimit) {
 
     // let list = missingList.getBlockMissingList([{block_height: 100}]);
     // TODO: missingList不能超过sql的连接池上线，否则需要分批。
-    // 其实是机器可能扛不住，资源占用过高。。。
+    // 其实是机器可能扛不住，资源占用过高。
     let list = missingList.getBlockMissingList(blockList);
 
     console.log('missingList: ', list);
@@ -215,11 +227,6 @@ let scanABlock = function(listIndex, pool) {
                         });
                     });
                 } else {
-                    // 创世区块没有交易？
-                    // 2018.09.03。。。创世区块get_block_info有问题，暂时不读取了, 其它块有无交易的情况发生。
-                    // if (listIndex === 0) {
-                    //     insertBlock(blockInfoFormatted, connection, 'blocks_0');
-                    // }
                     let connection = await getConnectionPromise(pool);
                     insertBlock(blockInfoFormatted, connection, 'blocks_0').then(() => {
                         connection.release();
@@ -241,18 +248,6 @@ let scanABlock = function(listIndex, pool) {
                     errType: 'codeError',
                     err: error
                 });
-                // 错误日志记录
-                // console.log('getBlockInfo::: ', error);
-                // console.log('__dirname----------->: ', __dirname);
-
-                // let file = __dirname + "/error.json";
-                // let result = JSON.parse(fs.readFileSync(file));
-                // result = result || {
-                //   list: []
-                // };
-
-                // result.list.push(listIndex);
-                // fs.writeFileSync(file, JSON.stringify(result));
 
                 console.log('[error]rollback: ', listIndex, error);
                 logger.error('rollback: ', listIndex, error);
@@ -279,7 +274,14 @@ async function subscribe(pool, scanLimit) {
     if (result && result[0] && result[0].block_height) {
         blockHeightInDataBase = parseInt(result[0].block_height, 10);
     }
-    let blockHeightInChain = parseInt(aelf.chain.getBlockHeight().result.block_height, 10);
+
+    let blockHeightInChain;
+    try {
+        blockHeightInChain = parseInt(aelf.chain.getBlockHeight().result.block_height, 10);
+    } catch(err) {
+        restart(err, 'subscribe -> getBlockHeight()');
+        return;
+    }
 
     console.log('blockHeightInDataBase: ', blockHeightInDataBase);
     console.log('blockHeightInChain: ', blockHeightInChain);
@@ -301,17 +303,10 @@ async function subscribe(pool, scanLimit) {
 
     let startTime = new Date().getTime();
     Promise.all(promises).then(result => {
-
-        let endTime = new Date().getTime();
-        console.log('endTime: ', endTime - startTime, 'scanTime: ', scanTime);
+        console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime);
         scanTime = 0;
-        logger.error(endTime - startTime);
-
-        // subscribe(pool, scanLimit);
-
     }).catch(err => {
-        let endTime = new Date().getTime();
-        logger.error('subscribe Promise.all fail: ', err, endTime - startTime);
+        restart(err, `subscribe Promise.all fail, ${new Date().getTime() - startTime}`);
     }).then(() => {
         subscribe(pool, scanLimit);
     });
