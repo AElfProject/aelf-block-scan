@@ -40,7 +40,7 @@ let aelf = {
 
 module.exports = {
 	mysql: mysql,
-	scanTimeInterval: 5000,
+	scanTimeInterval: 4000,
 	scanLimit: 100,
 	// scanLimit: 12,
 	log4js: log4js,

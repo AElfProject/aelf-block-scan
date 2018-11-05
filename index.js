@@ -28,7 +28,9 @@ log4js.configure(config.log4js);
 const logger = log4js.getLogger('scan');
 
 let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
-let scanLimit = config.scanLimit;
+const scanLimit = config.scanLimit;
+const scanTimeInterval = config.scanTimeInterval;
+
 let scanTimerReady = false;
 
 // NODE_ENV=production node index.js
@@ -257,7 +259,6 @@ let scanABlock = function(listIndex, pool) {
 };
 
 function scanTimerInit (pool, scanLimit) {
-    let scanTimeInterval = config.scanTimeInterval;
     let timeout = setTimeout(() => {
         subscribe(pool, scanLimit);
     }, scanTimeInterval);
