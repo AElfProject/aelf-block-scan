@@ -2,6 +2,12 @@
 
 ## Quicke Start
 
+### 0.Install Dependences
+
+Mysql
+
+PM2 // Just run 'node index.js' is also ok.
+
 ### 1.Initialize Mysql Database
 
 ```sql
@@ -19,13 +25,10 @@ pm2 start index.js --name aelf-block-scan
 ```
 
 
-## Dependence
 
+## procfile 是pandora自动生成的。暂时弃用pandora。
 
-
-### procfile 是pandora自动生成的。暂时弃用pandora。
-
-# Docker
+## Docker
 
 Now, the Repositories of test demo is in [docker/hzz780/aelf-block-scan](https://cloud.docker.com/swarm/hzz780/repository/docker/hzz780/aelf-block-scan/general)
 
