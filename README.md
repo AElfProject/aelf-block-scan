@@ -1,5 +1,15 @@
-# Quicke Start
+# AElf Block Scan
 
+## Quicke Start
+
+### 1.Initialize Mysql Database
+
+```sql
+// FYI
+./aelf_test.sql
+```
+
+### 2.Start the node Server
 ```
 npm install
 copy ./config/config.example.js ./config/config.js 
@@ -8,8 +18,12 @@ copy ./config/config.example.js ./config/config.js
 pm2 start index.js --name aelf-block-scan
 ```
 
-### procfile 是pandora自动生成的。暂时弃用pandora。
 
+## Dependence
+
+
+
+### procfile 是pandora自动生成的。暂时弃用pandora。
 
 # Docker
 
