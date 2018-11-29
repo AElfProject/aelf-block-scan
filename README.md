@@ -2,20 +2,29 @@
 
 ## Quicke Start
 
-### 0.Install Dependences
+### 1.Install Dependencies
 
 Mysql
 
 PM2 // Just run 'node index.js' is also ok.
 
-### 1.Initialize Mysql Database
+### 2.Initialize Mysql Database
 
 ```sql
 // FYI
 ./aelf_test.sql
 ```
 
-### 2.Start the node Server
+Warning: Please pay attention to Mysql connectionLimit. The Default connectionLimit of Mysql is 100.
+
+```
+	// get the max connections of Mysql.
+	mysql> show variables like 'max_connections';
+	// set the max connections of Mysql.
+	mysql> set GLOBAL max_connections=650
+```
+
+### 3.Start the node Server
 ```
 npm install
 copy ./config/config.example.js ./config/config.js 

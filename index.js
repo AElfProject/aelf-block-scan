@@ -10,10 +10,16 @@
 // 4. let blockList = await connection.query('select block_height from blocks_0', []); 需要优化，当区块数到百万千万级别时，如何分页处理。
 
 // let config = require('./config/config.local.js');
+// let config = require('./config/config.8001.js');
+// let config = require('./config/config.8001.js');
 let config = require('./config/config.js');
 const Aelf = require('aelf-sdk');
-const fs = require('fs');
+// const fs = require('fs');
 const log4js = require('log4js');
+
+const initAcquisition = require('./tps/initTpsAcquisition');
+let initAcquisitionReady = false;
+
 const { blockInfoFormat, transactionFormat } = require('./lib/format.js');
 const { insertTransactions, insertBlock } = require('./lib/insertPure.js');
 const missingList = require('./lib/missingList');
@@ -31,10 +37,8 @@ let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
 const scanLimit = config.scanLimit;
 const scanTimeInterval = config.scanTimeInterval;
 
-let scanTimerReady = false;
-
 // NODE_ENV=production node index.js
-const env = process.env.NODE_ENV;
+const env = process.env.NODE_ENV || '';
 console.log('env: ', env);
 if (env === 'production') {
     console.log = function () {};    
@@ -66,15 +70,13 @@ function restart(err, info = '') {
 init();
 
 function init() {
+    initAcquisitionReady = false;
     aelf.chain.connectChain(err => {
         if (err) {
             logger.error('aelf.chain.connectChain err: ', err);
         }
-        let wallet = Aelf.wallet.getWalletByPrivateKey(config.aelf.commonPrivateKey);
-        // let tokenc = aelf.chain.contractAt(config.aelf.contract, wallet);
 
-        // let aelf0
-        var aelfPool  = mysql.createPool(config.mysql.aelf0);
+        const aelfPool = mysql.createPool(config.mysql.aelf0);
         startScan(aelfPool, scanLimit);
 
     });
@@ -100,14 +102,13 @@ async function startScan(pool, scanLimit) {
     let list = missingList.getBlockMissingList(blockList);
 
     console.log('missingList: ', list);
-    // console.log('missingList: ', blockList, list);
-    // return;
+
     let startTime = new Date().getTime();
-    let scanABlockPromises = list.list.map(item => {
+    let scanMissingBlocksPromises = list.list.map(item => {
         return scanABlock(item, pool);
     });
 
-    Promise.all(scanABlockPromises).then(async () => {
+    Promise.all(scanMissingBlocksPromises).then(async () => {
         let endTime = new Date().getTime();
         console.log('endTime: ', endTime - startTime, 'scanTime: ', scanTime);
 
@@ -119,14 +120,14 @@ async function startScan(pool, scanLimit) {
             startScan(pool, scanLimit);
             return;
         }
+
+        // 确认没有丢失的块后，开始扫描数据入库。
         subscribe(pool, scanLimit);
     }).catch(err => {
         console.log('preScan - 理论上这一些promises是没有err的: ', err);
         console.log('endTime: ', endTime - startTime, 'scanTime: ', scanTime);
     });
 }
-
-
 
 // 获取一个区块的数据，并将数据插入数据库中，用一个事务来操作。
 // 先获取区块信息，然后获取所有交易信息。 
@@ -160,12 +161,13 @@ let scanABlock = function(listIndex, pool) {
                 if (txLength) {
                     let transactionPromises = [];
 
+                    // Get transactionPromises
                     for (let i = 0; i < txLength; i++) {
                         transactionPromises.push(new Promise((resolve, reject) => {
                             aelf.chain.getTxResult(transactions[i], (error, result) => {
 
                                 if (error || !result) {
-                                    console.log('error result getTxResult: ', listIndex, result);
+                                    console.log('error result getTxResult: ', listIndex, result, error);
                                     reject(error);
                                 } else {
                                     resolve(result);
@@ -174,6 +176,8 @@ let scanABlock = function(listIndex, pool) {
                         }));
                     }
 
+                    // 并发请求该块中所有交易。并插入数据库。
+                    // TODO: rpc接口 有批量获取交易的接口了。
                     Promise.all(transactionPromises).then(async (result) => {
 
                         let endTime = new Date().getTime();
@@ -184,8 +188,8 @@ let scanABlock = function(listIndex, pool) {
                         });
 
                         let connection = await getConnectionPromise(pool);
-                        // let tranConn = beginTransaction(connection);
-                        beginTransaction(connection)
+
+                        beginTransaction(connection);
 
                         let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
                         let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
@@ -259,7 +263,7 @@ let scanABlock = function(listIndex, pool) {
 };
 
 function scanTimerInit (pool, scanLimit) {
-    let timeout = setTimeout(() => {
+    setTimeout(() => {
         subscribe(pool, scanLimit);
     }, scanTimeInterval);
 }
@@ -267,10 +271,7 @@ function scanTimerInit (pool, scanLimit) {
 // subscribe 是真正定时任务执行时被运行的函数
 async function subscribe(pool, scanLimit) {
 
-    // 我的mbp, egg和node都在本机，200毫秒上下
     let result = await queryPromise(pool, 'select block_height from blocks_0 ORDER BY block_height DESC limit 1');
-    // 2018.09.03, 高度为0的区块，始终返回invalid BlockHeight
-    // let blockHeightInDataBase = 0;
     let blockHeightInDataBase = 1;
     if (result && result[0] && result[0].block_height) {
         blockHeightInDataBase = parseInt(result[0].block_height, 10);
@@ -288,11 +289,14 @@ async function subscribe(pool, scanLimit) {
     console.log('blockHeightInChain: ', blockHeightInChain);
 
     if (blockHeightInDataBase >= blockHeightInChain) {
-        // scanTimerReady = true;
         scanTimerInit(pool, scanLimit);
+
+        if (!initAcquisitionReady) {
+            initAcquisitionReady = true;
+            initAcquisition();
+        }
         return;
     }
-    // scanTimerReady = false;
 
     let max = Math.min(blockHeightInDataBase + scanLimit, blockHeightInChain);
 
