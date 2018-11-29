@@ -20,11 +20,13 @@ let config = require('../config/config.local.js');
 config.mysql.aelf0.connectionLimit = Math.ceil(config.mysql.aelf0.connectionLimit / 4);
 
 // 每 MINUTES 分钟 区间的数据采集入库。单位：分钟
-const MINUTES = 5;
+// const MINUTES = 5;
+const MINUTES = 1;
 // 接 MINUTES, 区间给程序使用，需要使用秒来处理。单位：秒
 const INTERVAL = MINUTES * 60;
 // For setTimeout, 日常采集数据方法调用的时间间隔。单位：毫秒
-const SCANINTERVAL = 60000; // 60s
+// const SCANINTERVAL = 60000; // 60s
+const SCANINTERVAL = 55000; // 55s
 // 延迟 DEALYTIME 秒数。如果 结束时间 < (当前时间 - DEALYTIME), 可以调用采集方法，否则setTimeout
 const DEALYTIME = 0;
 // 3600s 执行批量处理的临街时间，如果tps数据落后当前时间 BATCHLIMITTIME 秒时, 批量处理。单位：秒
@@ -178,13 +180,15 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
                 const blockTimeUnix = moment(blockTime).unix();
 
                 if (blockTimeUnix < endTimeUnixTemp) {
-                    option.txs = parseInt(block.tx_count, 10);
+                    option.txs += parseInt(block.tx_count, 10);
                     option.blocks++;
                     blocks.shift();
                 } else {
                     break;
                 }
             }
+            option.tps = option.txs / INTERVAL;
+            option.tpm = option.txs / MINUTES;
             needInsertList.push(option);
         }
 
