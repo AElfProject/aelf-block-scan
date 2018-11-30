@@ -9,12 +9,8 @@
 // 3. 需要增加检查, 每隔一段时间，或者多少次循环后，需要check一次是否有未入库的块。
 // 4. let blockList = await connection.query('select block_height from blocks_0', []); 需要优化，当区块数到百万千万级别时，如何分页处理。
 
-// let config = require('./config/config.local.js');
-// let config = require('./config/config.8001.js');
-// let config = require('./config/config.8001.js');
-let config = require('./config/config.js');
+let config = require('./config/configInit.js').config;
 const Aelf = require('aelf-sdk');
-// const fs = require('fs');
 const log4js = require('log4js');
 
 const initAcquisition = require('./tps/initTpsAcquisition');
@@ -36,13 +32,6 @@ const logger = log4js.getLogger('scan');
 let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
 const scanLimit = config.scanLimit;
 const scanTimeInterval = config.scanTimeInterval;
-
-// NODE_ENV=production node index.js
-const env = process.env.NODE_ENV || '';
-console.log('env: ', env);
-if (env === 'production') {
-    console.log = function () {};    
-}
 
 // 这个，然后再套上PM2...
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception

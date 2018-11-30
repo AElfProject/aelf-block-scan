@@ -1,10 +1,5 @@
 const process = require('child_process');
-
-const startCli = 'pm2 start ./tps/tps.js --name aelf-block-scan-tps';
-const stopCli = 'pm2 stop aelf-block-scan-tps';
-const deleteCli = 'pm2 delete aelf-block-scan-tps';
-
-const cliList = [stopCli, deleteCli, startCli];
+const cliList = require('../config/configInit').tpsCliList;
 
 module.exports = function () {
     cliList.map(cli => {

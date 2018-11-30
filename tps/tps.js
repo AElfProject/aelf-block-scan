@@ -16,7 +16,7 @@
 const moment = require('moment');
 const mysql = require('mysql');
 const { queryPromise } = require('../lib/mysql/queryPromise');
-let config = require('../config/config.local.js');
+let config = require('../config/configInit.js').config;
 config.mysql.aelf0.connectionLimit = Math.ceil(config.mysql.aelf0.connectionLimit / 4);
 
 // 每 MINUTES 分钟 区间的数据采集入库。单位：分钟
