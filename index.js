@@ -71,10 +71,10 @@ function init() {
     });
 }
 
-
 // 统计用
 let scanTime = 0;
-
+// 只重启三次
+let reStartScan = 0;
 async function startScan(pool, scanLimit) {
     // 供测试使用，我的mbp, 13次/s, cpu占用率特别高。
     // setInterval(function () {
@@ -104,10 +104,13 @@ async function startScan(pool, scanLimit) {
         let blockList = await queryPromise(pool, 'select block_height from blocks_0', []);
         let list = missingList.getBlockMissingList(blockList);
         console.log('list.length: ', list.length);
-        if (list.length) {
+        if (list.length && reStartScan < 3) {
+            reStartScan++;
             console.log('missingList: ', list);
             startScan(pool, scanLimit);
             return;
+        } else if (reStartScan >= 3) {
+            logger.error('!!!!!!!! re start scan > 3');
         }
 
         // 确认没有丢失的块后，开始扫描数据入库。
