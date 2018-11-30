@@ -6,16 +6,16 @@ git pull
 if [ $2 == 'reinstall' ]
 then
     echo 'rm -rf node_modules';
-    #rm -rf node_modules;
+    rm -rf node_modules;
     echo 'npm install';
-    #npm install;
+    npm install;
 fi
 
 if [ $1 == 'dev' ]
 then
-    #pm2 start index.js --name aelf-block-scan
+    pm2 start index.js --name aelf-block-scan
     echo 'pm2 start index.js --name aelf-block-scan';
 else
-    #NODE_ENV=production pm2 start index.js --name aelf-block-scan
+    NODE_ENV=production pm2 start index.js --name aelf-block-scan
     echo 'NODE_ENV=production pm2 start index.js --name aelf-block-scan';
 fi
