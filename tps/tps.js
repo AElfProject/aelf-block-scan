@@ -49,7 +49,7 @@ async function init(pool) {
     const firstBlockInBlockTable = await queryPromise(pool, 'select * from blocks_0 where block_height=1', []);
     const latestBlockInTPSTable = await queryPromise(pool, 'select * from tps_0 order by end DESC limit 1 offset 0', []);
 
-    const startTimeUnix01 = moment(firstBlockInBlockTable[0].time).unix();
+    const startTimeUnix01 = firstBlockInBlockTable[0] && moment(firstBlockInBlockTable[0].time).unix() || 0;
     const startTimeUnix02 = latestBlockInTPSTable.length ? moment(latestBlockInTPSTable[0].end).unix() : 0;
 
     const startTimeUnix = Math.max(startTimeUnix01, startTimeUnix02);
