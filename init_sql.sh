@@ -1,0 +1,1 @@
+mysql -uroot -p aelf_test < aelf_test.sql;
