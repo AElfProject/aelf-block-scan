@@ -11,6 +11,11 @@ then
     npm install;
 fi
 
+pm2 stop aelf-block-scan;
+pm2 stop aelf-block-scan-tps;
+pm2 delete aelf-block-scan
+pm2 delete aelf-block-scan-tps;
+
 if [ $1 == 'dev' ]
 then
     pm2 start index.js --name aelf-block-scan
