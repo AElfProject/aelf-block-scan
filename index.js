@@ -192,7 +192,7 @@ let scanABlock = function(listIndex, pool) {
                                     console.log('connection.commit rollback!');
                                     connection.rollback(function() {
                                         connection.release();
-                                        logger.error('[insertTranPromise, insertBlockPromise]Promise.all then rollback: ', err);
+                                        logger.error('[insertTranPromise, insertBlockPromise]Promise.all then rollback: ', listIndex, err);
                                         // throw err;
                                     });
                                 }
@@ -203,7 +203,7 @@ let scanABlock = function(listIndex, pool) {
                             console.log('connection.commit rollback! catch');
                             connection.rollback(function() {
                                 connection.release();
-                                logger.error('[insertTranPromise, insertBlockPromise]Promise.all catch rollback: ', err);
+                                logger.error('[insertTranPromise, insertBlockPromise]Promise.all catch rollback: ', listIndex, err);
                                 // throw err;
                             });
 
@@ -217,7 +217,7 @@ let scanABlock = function(listIndex, pool) {
                         });
 
                     }).catch(err => {
-                        logger.error('Promise.all(transactionPromises) catch rollback: ', err);
+                        logger.error('Promise.all(transactionPromises) catch rollback: ', listIndex, err);
                         // console.log('transactionPromises rollback:', listIndex);
                         resolve({
                             err: err,
