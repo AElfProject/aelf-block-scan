@@ -7,24 +7,22 @@ start_mode=${1:-'production'}
 node_modules_action=${2:-'default'}
 echo ${node_modules_action} ${start_mode}
 
-echo 'git pull'
-git pull
+git pull && echo 'git pull'
 
 if [ ${node_modules_action} = 'reinstall' ]
 then
-    echo 'rm -rf node_modules'
-    rm -rf node_modules
     echo 'npm install'
-    npm install
+    npm install && echo 'install done'
+    sleep 3
 fi
 
-app_names=('aelf-block-scan', 'aelf-block-scan-tps')
+app_names=(aelf-block-scan aelf-block-scan-tps)
 
 for item in ${app_names[@]}
 do
-    echo 'pm2 stop & delete ' ${item};
-    pm2 stop ${item}
-    pm2 delete ${item}
+    echo 'pm2 stop & delete ' ${item}
+    echo pm2 stop ${item}
+    pm2 stop ${item} && pm2 delete ${item}
 done
 
 if [ ${start_mode} = 'dev' ]
