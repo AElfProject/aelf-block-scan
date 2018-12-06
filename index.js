@@ -72,44 +72,6 @@ function restart(err, info = '') {
 
 // 统计用, 扫描时长
 let scanTime = 0;
-function scanMissingList(missingList, resove, reject, restartCount = 0) {
-    const {list, length} = missingList;
-
-    if (restartCount > restartScanMissingListLimit) {
-        const errMsg = 'Too many scanMissingListReStartTime, Scan Shutdown';
-        logger.error(errMsg);
-        console.log(errMsg);
-        reject(errMsg);
-        return;
-    }
-    if (length === 0) {
-        resove();
-        return;
-    }
-
-    const listGetNow = list.slice(0, scanLimit);
-    const listTodo = list.slice(scanLimit, list.length);
-
-    let scanMissingBlocksPromises = listGetNow.map(item => {
-        return scanABlockPromise(item, pool);
-    });
-
-    Promise.all(scanMissingBlocksPromises).then(() => {
-        restartCount = 0;
-        scanMissingList({
-            list: listTodo,
-            length: listTodo.length
-        }, resove, reject, restartCount);
-    }).catch(err => {
-        // 失败重试
-        restartCount++;
-        logger.error('[ERROR] scanMissingList catch: ', err);
-        scanMissingList({
-            list: list,
-            length: list.length
-        }, resove, reject, restartCount);
-    });
-}
 
 async function startScan(pool, scanLimit) {
     // TODO: 如果block数据有上百万条。这样做开销是极大的。检查程序应做成另外一个程序。
@@ -182,6 +144,45 @@ async function subscribe(pool, scanLimit) {
         scanTime = 0;
     }).catch(err => {
         restart(err, `subscribe scanBlocks failed, ${new Date().getTime() - startTime}`);
+    });
+}
+
+function scanMissingList(missingList, resove, reject, restartCount = 0) {
+    const {list, length} = missingList;
+
+    if (restartCount > restartScanMissingListLimit) {
+        const errMsg = 'Too many scanMissingListReStartTime, Scan Shutdown';
+        logger.error(errMsg);
+        console.log(errMsg);
+        reject(errMsg);
+        return;
+    }
+    if (length === 0) {
+        resove();
+        return;
+    }
+
+    const listGetNow = list.slice(0, scanLimit);
+    const listTodo = list.slice(scanLimit, list.length);
+
+    let scanMissingBlocksPromises = listGetNow.map(item => {
+        return scanABlockPromise(item, pool);
+    });
+
+    Promise.all(scanMissingBlocksPromises).then(() => {
+        restartCount = 0;
+        scanMissingList({
+            list: listTodo,
+            length: listTodo.length
+        }, resove, reject, restartCount);
+    }).catch(err => {
+        // 失败重试
+        restartCount++;
+        logger.error('[ERROR] scanMissingList catch: ', err);
+        scanMissingList({
+            list: list,
+            length: list.length
+        }, resove, reject, restartCount);
     });
 }
 
