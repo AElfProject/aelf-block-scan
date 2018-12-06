@@ -1,5 +1,6 @@
-/*
- * huangzongzhe
+/**
+ * @file
+ * @author huangzongzhe
  * 2018.11.28 IFC Beijing
  * 0.默认已经完成了扫块的工作。
  * 1.获取第一个块后, 获取每个间隔时间段内的区块，并且在这个区间外还有块数据，算出tps tpm后，入库。
@@ -15,7 +16,7 @@
 
 const moment = require('moment');
 const mysql = require('mysql');
-const { queryPromise } = require('../lib/mysql/queryPromise');
+const {queryPromise} = require('../lib/mysql/queryPromise');
 let config = require('../config/configInit.js').config;
 config.mysql.aelf0.connectionLimit = Math.ceil(config.mysql.aelf0.connectionLimit / 4);
 
@@ -28,7 +29,7 @@ const INTERVAL = MINUTES * 60;
 // const SCANINTERVAL = 60000; // 60s
 const SCANINTERVAL = 55000; // 55s
 // 延迟 DEALYTIME 秒数。如果 结束时间 < (当前时间 - DEALYTIME), 可以调用采集方法，否则setTimeout
-const DEALYTIME = 0;
+const DEALYTIME = 10;
 // 3600s 执行批量处理的临街时间，如果tps数据落后当前时间 BATCHLIMITTIME 秒时, 批量处理。单位：秒
 const BATCHLIMITTIME = 3600;
 // 批量处理时,最长的时间间隔。
@@ -41,23 +42,26 @@ const CURRENTTIME = (new Date()).getTime() / 1000;
 
 const aelfPool = mysql.createPool(config.mysql.aelf0);
 
-const tpsInsertSql = getInsertTpsSql ();
+const tpsInsertSql = getInsertTpsSql();
 
 init(aelfPool);
 
 async function init(pool) {
     const firstBlockInBlockTable = await queryPromise(pool, 'select * from blocks_0 where block_height=1', []);
-    const latestBlockInTPSTable = await queryPromise(pool, 'select * from tps_0 order by end DESC limit 1 offset 0', []);
+    const latestBlockInTPSTable = await queryPromise(
+        pool,
+        'select * from tps_0 order by end DESC limit 1 offset 0',
+        []
+    );
 
     const startTimeUnix01 = firstBlockInBlockTable[0] && moment(firstBlockInBlockTable[0].time).unix() || 0;
     const startTimeUnix02 = latestBlockInTPSTable.length ? moment(latestBlockInTPSTable[0].end).unix() : 0;
-
     const startTimeUnix = Math.max(startTimeUnix01, startTimeUnix02);
 
-    getTpsTypeFilter(pool, startTimeUnix)
+    getTpsTypeFilter(pool, startTimeUnix);
 }
 
-function getTpsTypeFilter (pool, startTimeUnix) {
+function getTpsTypeFilter(pool, startTimeUnix) {
     const currentStartInterval = CURRENTTIME - startTimeUnix;
 
     let endTimeUnix = startTimeUnix + INTERVAL;
@@ -75,7 +79,7 @@ function getTpsTypeFilter (pool, startTimeUnix) {
     getTps(pool, startTimeUnix, endTimeUnix, insertBatch);
 }
 
-function getInsertTpsSql (tpsValueBlankString) {
+function getInsertTpsSql(tpsValueBlankString) {
     const tpsTableKeys = [
         // id, auto increment
         'start',
@@ -96,7 +100,9 @@ function getInsertTpsSql (tpsValueBlankString) {
 
     tpsValueBlankString = tpsValueBlankString || tpsValuesBlankStringDefault;
 
-    const tpsInsertSql = `insert into tps_0 ${tpsKeysString} VALUES ${tpsValueBlankString} ON DUPLICATE KEY UPDATE start=(start);`;
+    const tpsInsertSql
+        = `insert into tps_0 ${tpsKeysString} VALUES ${tpsValueBlankString}`
+        + 'ON DUPLICATE KEY UPDATE start=(start);';
     return tpsInsertSql;
 }
 
@@ -109,12 +115,12 @@ async function insertTps(pool, blocks, startTime, endTime) {
         const tps = txCount / INTERVAL;
         const tpm = txCount * 60 / INTERVAL;
 
-        // const queryValues = [startTime, endTime, txCount, blocksCount, tps, tpm, type];
+        // Key in DateBase [startTime, endTime, txCount, blocksCount, tps, tpm, type];
         const queryValues = [startTime, endTime, txCount, blocks.length, tps, tpm, MINUTES];
-        const result = await queryPromise(pool, tpsInsertSql, queryValues);
+        await queryPromise(pool, tpsInsertSql, queryValues);
     } else {
         const queryValues = [startTime, endTime, 0, 0, 0, 0, MINUTES];
-        const result = await queryPromise(pool, tpsInsertSql, queryValues);
+        await queryPromise(pool, tpsInsertSql, queryValues);
     }
 }
 
@@ -142,14 +148,10 @@ async function insertTpsBatch(pool, tpsList) {
     }
 
     const tpsInsertSql = getInsertTpsSql(tpsValueBlankString);
-    // const result = await queryPromise(pool, tpsInsertSql, tpsValueList);
     await queryPromise(pool, tpsInsertSql, tpsValueList);
 
-    const endTime = (new Date()).getTime();
-    // console.log('insert time: ', endTime - startTime, result);
-    console.log('insert time: ', endTime - startTime);
+    console.log('insert time: ', ((new Date()).getTime()) - startTime);
 }
-
 
 async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
     // Mysql '2018-11-05T03:29:18Z' and '2018-11-05T03:34:18Z'
@@ -157,7 +159,11 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
     // startTimeUnix -= 1;
     const startTime = moment.unix(startTimeUnix).utc().format();
     const endTime = moment.unix(endTimeUnix).utc().format();
-    const blocks = await queryPromise(pool, 'select * from blocks_0 where time between ? and ? order by time ASC', [startTime, endTime]);
+    const blocks = await queryPromise(
+        pool,
+        'select * from blocks_0 where time between ? and ? order by time ASC',
+        [startTime, endTime]
+    );
 
     if (insertBatch) {
         let needInsertList = [];
@@ -201,7 +207,7 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
     const newEndTimeUnix = endTimeUnix + INTERVAL;
     const nowTimeUnix = (new Date()).getTime() / 1000;
 
-    console.log('FYI: ', endTimeUnix, newEndTimeUnix, nowTimeUnix, nowTimeUnix-newEndTimeUnix);
+    console.log('FYI: ', endTimeUnix, newEndTimeUnix, nowTimeUnix, nowTimeUnix - newEndTimeUnix);
     if (newEndTimeUnix < (nowTimeUnix - DEALYTIME)) {
         await insertTps(pool, blocks, startTime, endTime);
         getTpsTypeFilter(pool, endTimeUnix);

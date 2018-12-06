@@ -14,6 +14,8 @@ then
     echo 'npm install'
     npm install && echo 'install done'
     sleep 3
+    npm install && echo 'install check done'
+    sleep 3
 fi
 
 app_names=(aelf-block-scan aelf-block-scan-tps)

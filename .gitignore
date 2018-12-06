@@ -4,6 +4,7 @@ test.js
 error.json
 config.js
 config/config.local.js
+config/config.*.js
 **.bak
 log.js
 .node-xmlhttprequest-**

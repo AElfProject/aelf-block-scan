@@ -1,17 +1,26 @@
+/**
+ * @file configInit
+ * @author huangzongzhe
+ */
 // NODE_ENV=production node index.js
 const envIsProduction = (process.env.NODE_ENV === 'production');
 console.log('envIsProduction: ', envIsProduction);
 
 const config = envIsProduction ? require('./config.js') : require('./config.local.js');
 
-function getTpsCliList () {
+function getTpsStartCommandList() {
     const prefixEnv = envIsProduction ? 'NODE_ENV=production ' : '';
-    const startCli = prefixEnv + 'pm2 start ./tps/tps.js --name aelf-block-scan-tps';
+    const startCommand = prefixEnv + 'pm2 start ./tps/tps.js --name aelf-block-scan-tps';
     // const stopCli = 'pm2 stop aelf-block-scan-tps';
     // const deleteCli = 'pm2 delete aelf-block-scan-tps';
     // return [stopCli, deleteCli, startCli];
     // return [stopCli, startCli];
-    return [startCli];
+    return [startCommand];
+}
+
+function getTpsStopCommandList() {
+    const stopCommand = 'pm2 stop aelf-block-scan-tps';
+    return [stopCommand];
 }
 
 // if (envIsProduction) {
@@ -19,6 +28,7 @@ function getTpsCliList () {
 // }
 
 module.exports = {
-    config: config,
-    tpsCliList: getTpsCliList()
+    config,
+    getTpsStartCommandList,
+    getTpsStopCommandList
 };
