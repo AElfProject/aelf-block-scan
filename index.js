@@ -85,13 +85,14 @@ async function startScan(pool, scanLimit) {
     let startTime = new Date().getTime();
 
     const scanMissingListPromise = new Promise((resolve, reject) => {
-        scanMissingList(list, resolve, reject);
+        scanMissingList(list, pool, resolve, reject);
     });
     scanMissingListPromise.then(() => {
         console.log('scanMissingListPromise then');
         subscribe(pool, scanLimit);
-    }).catch(() => {
-        console.log('scanMissingListPromise catch');
+    }).catch(err => {
+        logger.error('scanMissingListPromise catch, Scan Shutdown!!!!!', err);
+        console.log('scanMissingListPromise catch, Scan Shutdown!!!!!', err);
         // Too many restart
     }).then(() => {
         console.log('endTime: ', (new Date().getTime()) - startTime, 'scanTime: ', scanTime);
@@ -147,14 +148,14 @@ async function subscribe(pool, scanLimit) {
     });
 }
 
-function scanMissingList(missingList, resove, reject, restartCount = 0) {
+function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
     const {list, length} = missingList;
 
     if (restartCount > restartScanMissingListLimit) {
         const errMsg = 'Too many scanMissingListReStartTime, Scan Shutdown';
         logger.error(errMsg);
         console.log(errMsg);
-        reject(errMsg);
+        reject('');
         return;
     }
     if (length === 0) {
@@ -170,19 +171,21 @@ function scanMissingList(missingList, resove, reject, restartCount = 0) {
     });
 
     Promise.all(scanMissingBlocksPromises).then(() => {
+        console.log(1111);
         restartCount = 0;
         scanMissingList({
             list: listTodo,
             length: listTodo.length
-        }, resove, reject, restartCount);
+        }, pool, resove, reject, restartCount);
     }).catch(err => {
         // 失败重试
         restartCount++;
         logger.error('[ERROR] scanMissingList catch: ', err);
+        console.error('[ERROR] scanMissingList catch: ', err);
         scanMissingList({
             list: list,
             length: list.length
-        }, resove, reject, restartCount);
+        }, pool, resove, reject, restartCount);
     });
 }
 

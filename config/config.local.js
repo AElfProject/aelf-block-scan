@@ -22,7 +22,8 @@ const mysql = {
         // 密码
         password: '',
         // 数据库名
-        database: 'aelf_test',
+        // database: 'aelf_test',
+        database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
         // 链接池 链接上限

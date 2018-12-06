@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 29/11/2018 15:28:27
+ Date: 06/12/2018 15:26:03
 */
 
 SET NAMES utf8mb4;
@@ -22,8 +22,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `address_contracts`;
 CREATE TABLE `address_contracts` (
-  `address` varchar(255) NOT NULL,
-  `contract_address` varchar(255) NOT NULL,
+  `address` varchar(64) NOT NULL,
+  `contract_address` varchar(64) NOT NULL,
   `update_time` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`address`,`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -33,13 +33,13 @@ CREATE TABLE `address_contracts` (
 -- ----------------------------
 DROP TABLE IF EXISTS `blocks_0`;
 CREATE TABLE `blocks_0` (
-  `block_hash` varchar(255) NOT NULL,
-  `pre_block_hash` varchar(255) NOT NULL,
-  `chain_id` varchar(255) NOT NULL,
-  `block_height` int(255) NOT NULL,
+  `block_hash` varchar(64) NOT NULL,
+  `pre_block_hash` varchar(64) NOT NULL,
+  `chain_id` varchar(64) NOT NULL,
+  `block_height` int(64) NOT NULL,
   `tx_count` int(32) NOT NULL,
-  `merkle_root_tx` varchar(255) NOT NULL,
-  `merkle_root_state` varchar(255) NOT NULL,
+  `merkle_root_tx` varchar(64) NOT NULL,
+  `merkle_root_state` varchar(64) NOT NULL,
   `time` varchar(255) NOT NULL COMMENT '直接转存节点来的',
   PRIMARY KEY (`block_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -49,13 +49,13 @@ CREATE TABLE `blocks_0` (
 -- ----------------------------
 DROP TABLE IF EXISTS `contract_aelf20`;
 CREATE TABLE `contract_aelf20` (
-  `contract_address` varchar(255) NOT NULL,
-  `chain_id` varchar(255) NOT NULL,
-  `block_hash` varchar(255) NOT NULL,
-  `tx_id` varchar(255) NOT NULL,
-  `symbol` varchar(255) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `total_supply` bigint(64) NOT NULL,
+  `contract_address` varchar(64) NOT NULL,
+  `chain_id` varchar(64) NOT NULL,
+  `block_hash` varchar(64) NOT NULL,
+  `tx_id` varchar(64) NOT NULL,
+  `symbol` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `total_supply` bigint(64) unsigned NOT NULL,
   `decimals` int(32) DEFAULT NULL,
   PRIMARY KEY (`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -80,18 +80,18 @@ CREATE TABLE `tps_0` (
 -- ----------------------------
 DROP TABLE IF EXISTS `transactions_0`;
 CREATE TABLE `transactions_0` (
-  `tx_id` varchar(255) NOT NULL,
-  `params_to` varchar(255) NOT NULL DEFAULT '-1' COMMENT 'target address',
-  `chain_id` varchar(255) NOT NULL,
-  `block_height` int(32) NOT NULL,
-  `address_from` varchar(255) NOT NULL,
-  `address_to` varchar(255) NOT NULL COMMENT 'contract address',
+  `tx_id` varchar(64) NOT NULL,
+  `params_to` varchar(64) NOT NULL DEFAULT '-1' COMMENT 'target address',
+  `chain_id` varchar(64) NOT NULL,
+  `block_height` int(32) unsigned NOT NULL,
+  `address_from` varchar(64) NOT NULL,
+  `address_to` varchar(64) NOT NULL COMMENT 'contract address',
   `params` text NOT NULL,
-  `method` varchar(255) NOT NULL,
-  `block_hash` varchar(255) NOT NULL,
-  `increment_id` bigint(64) NOT NULL,
-  `quantity` bigint(64) NOT NULL,
-  `tx_status` varchar(255) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `block_hash` varchar(64) NOT NULL,
+  `increment_id` int(32) unsigned NOT NULL,
+  `quantity` bigint(64) unsigned NOT NULL,
+  `tx_status` varchar(64) NOT NULL,
   PRIMARY KEY (`tx_id`,`params_to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

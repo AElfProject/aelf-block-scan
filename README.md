@@ -2,6 +2,15 @@
 
 ## Quicke Start
 
+Ensure dependencies are ready.(node, pm2, mysql & database & tables)
+
+```shell
+bash build.sh dev
+bash build.sh dev reinstall
+bash build.sh pro
+bash build.sh pro reinstall
+```
+
 ### 1.Install Dependencies
 
 Mysql
@@ -10,14 +19,11 @@ PM2 // Just run 'node index.js' is also ok.
 
 ### 2.Initialize Mysql Database
 
-```sql
-// FYI
-./aelf_test.sql
-```
+init_sql.sh for you info.
 
 Warning: Please pay attention to Mysql connectionLimit. The Default connectionLimit of Mysql is 100.
 
-```
+```shell
 	// get the max connections of Mysql.
 	mysql> show variables like 'max_connections';
 	// set the max connections of Mysql.
@@ -25,7 +31,8 @@ Warning: Please pay attention to Mysql connectionLimit. The Default connectionLi
 ```
 
 ### 3.Start the node Server
-```
+
+```shell
 npm install
 copy ./config/config.example.js ./config/config.js 
 // add your own config
@@ -33,21 +40,6 @@ copy ./config/config.example.js ./config/config.js
 pm2 start index.js --name aelf-block-scan
 ```
 
-
-
 ## procfile 是pandora自动生成的。暂时弃用pandora。
 
-## Docker
-
-Now, the Repositories of test demo is in [docker/hzz780/aelf-block-scan](https://cloud.docker.com/swarm/hzz780/repository/docker/hzz780/aelf-block-scan/general)
-
-#### Demo
-
-```
-docker container run -dit \
---name=aelf-block-scan \
---mount type=bind,source=/Users/huangzongzhe/workspace/hoopox/aelf-web-docker/scan/config.js,target=/app/config.js \
-aelf-block-scan:0.0.1 /bin/bash
-
-docker exec a7db727219ae node index.js
-```
+## Docker [TODO]
