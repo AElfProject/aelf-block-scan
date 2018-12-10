@@ -33,7 +33,7 @@ const logger = log4js.getLogger('scan');
 let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
 const {scanLimit, scanTimeInterval, restartTimeInterval, restartScanMissingListLimit} = config;
 
-// 这个，然后再套上PM2...
+// This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
 init();
@@ -51,11 +51,11 @@ function init() {
 }
 
 let restartTime = 0;
+let restartTimer = null;
 process.on('uncaughtException', (err) => {
     if (!err.toString().match('Invalid JSON RPC response')) {
         return;
     }
-    // 针对这个error重启
     // Error: Invalid JSON RPC response: undefined
     restart(err);
 });
@@ -64,7 +64,8 @@ function restart(err, info = '') {
     logger.error(`Err: ${err}, ExtraInfo: ${info}`);
     console.log('捕获到异常, 1分钟后重启: ', err);
     restartTime++;
-    setTimeout(() => {
+    clearTimeout(restartTimer);
+    restartTimer = setTimeout(() => {
         logger.error(`第 ${restartTime} 次重启中》》》》》》》》》》`);
         init();
     }, restartTimeInterval);
@@ -347,7 +348,7 @@ function getTransactionPromises(block) {
     const transactions = blockInfo.Body.Transactions;
     const txLength = transactions.length;
     let transactionPromises = [];
-    const PAGELIMIT = 100; // 每页条数
+    const PAGELIMIT = 100;
 
     for (let offset = 0; offset < txLength; offset += PAGELIMIT) {
         transactionPromises.push(new Promise((resolve, reject) => {

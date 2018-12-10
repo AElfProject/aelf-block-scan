@@ -11,10 +11,6 @@ const config = envIsProduction ? require('./config.js') : require('./config.loca
 function getTpsStartCommandList() {
     const prefixEnv = envIsProduction ? 'NODE_ENV=production ' : '';
     const startCommand = prefixEnv + 'pm2 start ./tps/tps.js --name aelf-block-scan-tps';
-    // const stopCli = 'pm2 stop aelf-block-scan-tps';
-    // const deleteCli = 'pm2 delete aelf-block-scan-tps';
-    // return [stopCli, deleteCli, startCli];
-    // return [stopCli, startCli];
     return [startCommand];
 }
 

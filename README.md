@@ -5,6 +5,8 @@
 Ensure dependencies are ready.(node, pm2, mysql & database & tables)
 
 ```shell
+bash build.sh < type> < npm action>
+# Demos
 bash build.sh dev
 bash build.sh dev reinstall
 bash build.sh pro
@@ -21,13 +23,23 @@ PM2 // Just run 'node index.js' is also ok.
 
 init_sql.sh for you info.
 
-Warning: Please pay attention to Mysql connectionLimit. The Default connectionLimit of Mysql is 100.
+Warning: 
 
-```shell
-	// get the max connections of Mysql.
-	mysql> show variables like 'max_connections';
-	// set the max connections of Mysql.
-	mysql> set GLOBAL max_connections=650
+- Please pay attention to Mysql connectionLimit. The Default connectionLimit of Mysql is 100.
+- Please do not use admin. Use the normal users without SUPER privilege.
+
+Grant Demo
+```bash
+    CREATE USER 'normal_aelf'@'localhost' IDENTIFIED BY 'password';
+    GRANT select, insert, update, delete on aelf_test.* TO 'normal_aelf'@'localhost';
+```
+
+Reset max connections Demo
+```bash
+    mysql> show variables like 'max_connections';
+    mysql> set GLOBAL max_connections=650;
+    // get the status of current connnections
+    mysql> show full processlist;
 ```
 
 ### 3.Start the node Server
@@ -40,6 +52,6 @@ copy ./config/config.example.js ./config/config.js
 pm2 start index.js --name aelf-block-scan
 ```
 
-## procfile 是pandora自动生成的。暂时弃用pandora。
+## procfile pandora [TODO]
 
 ## Docker [TODO]

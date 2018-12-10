@@ -14,16 +14,18 @@ const mysql = {
     aelf0: {
         // host
         // host: 'mysql.com',
-        host: 'localhost',
+        host: '127.0.0.1',
         // 端口号
         port: '3306',
         // 用户名
-        user: 'root',
+        user: 'normal_aelf',
+        // user: 'root',
         // 密码
-        password: '',
+        // password: '',
+        password: 'password',
         // 数据库名
-        // database: 'aelf_test',
-        database: 'aelf_test_01',
+        database: 'aelf_test',
+        // database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
         // 链接池 链接上限
