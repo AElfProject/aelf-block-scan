@@ -147,14 +147,14 @@ async function subscribe(pool, scanLimit) {
     Promise.all(scanBlocksPromises).then(() => {
     // Promise.all(promises).then(result => {
         subscribe(pool, scanLimit);
-        console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime);
+        console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime, ' time now:', new Date());
         scanTime = 0;
     }).catch(err => {
         restart(err, `subscribe scanBlocks failed, ${new Date().getTime() - startTime}`);
     });
 }
 
-function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
+function scanMissingList(missingList, pool, resolve, reject, restartCount = 0) {
     const {list, length} = missingList;
 
     if (restartCount > restartScanMissingListLimit) {
@@ -165,7 +165,7 @@ function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
         return;
     }
     if (length === 0) {
-        resove();
+        resolve();
         return;
     }
 
@@ -182,7 +182,7 @@ function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
         scanMissingList({
             list: listTodo,
             length: listTodo.length
-        }, pool, resove, reject, restartCount);
+        }, pool, resolve, reject, restartCount);
     }).catch(err => {
         // 失败重试
         restartCount++;
@@ -191,20 +191,20 @@ function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
         scanMissingList({
             list: list,
             length: list.length
-        }, pool, resove, reject, restartCount);
+        }, pool, resolve, reject, restartCount);
     });
 }
 
 /**
- * 获取区块和区块中的交易, 事务插入。
- * @Param {number} listIndex 区块高度
- * @Param {Object} pool mysql链接池
+ * get block & txs in the block, insert through transaction(sql).
+ * @Param {number} listIndex block height
+ * @Param {Object} pool mysql poll
  *
  * @return {Object} Promise
  */
 function scanABlockPromise(listIndex, pool) {
     return new Promise((resolve, reject) => {
-        let startTime = new Date().getTime(); // 统计用
+        let startTime = new Date().getTime();
 
         const successCallback = (err, result) => {
             resolve({
