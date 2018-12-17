@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 100309
  Source Host           : localhost:3306
- Source Schema         : aelf_test
+ Source Schema         : aelf_test_01
 
  Target Server Type    : MySQL
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 06/12/2018 15:26:03
+ Date: 17/12/2018 16:51:32
 */
 
 SET NAMES utf8mb4;
@@ -61,17 +61,35 @@ CREATE TABLE `contract_aelf20` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
+-- Table structure for nodes_0
+-- ----------------------------
+DROP TABLE IF EXISTS `nodes_0`;
+CREATE TABLE `nodes_0` (
+  `contract_address` varchar(64) NOT NULL COMMENT 'token contract address',
+  `chain_id` varchar(64) NOT NULL,
+  `api_ip` varchar(128) NOT NULL,
+  `api_domain` varchar(255) DEFAULT NULL,
+  `rpc_ip` varchar(128) NOT NULL,
+  `rpc_domain` varchar(255) DEFAULT NULL,
+  `token_name` varchar(255) NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `status` int(1) NOT NULL,
+  `create_time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`contract_address`,`chain_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
 -- Table structure for tps_0
 -- ----------------------------
 DROP TABLE IF EXISTS `tps_0`;
 CREATE TABLE `tps_0` (
-  `start` varchar(255) NOT NULL COMMENT '起始时间,转存blocks_0',
-  `end` varchar(255) NOT NULL COMMENT '结束时间, 为start + N',
-  `txs` int(32) NOT NULL COMMENT '该时间段中的交易数',
-  `blocks` int(32) NOT NULL COMMENT '该时间段中的总区块数',
+  `start` varchar(255) NOT NULL COMMENT 'start time, fromblocks_0',
+  `end` varchar(255) NOT NULL COMMENT 'start + N(the value of key: type)',
+  `txs` int(32) NOT NULL COMMENT 'tx count during N minutes',
+  `blocks` int(32) NOT NULL COMMENT 'block count during N minutes',
   `tps` int(32) NOT NULL COMMENT 'transactions per second',
   `tpm` int(32) NOT NULL COMMENT 'transactions per minute',
-  `type` int(16) NOT NULL COMMENT 'N, 间隔分钟数',
+  `type` int(16) NOT NULL COMMENT 'N, interval time',
   PRIMARY KEY (`start`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -93,6 +111,17 @@ CREATE TABLE `transactions_0` (
   `quantity` bigint(64) unsigned NOT NULL,
   `tx_status` varchar(64) NOT NULL,
   PRIMARY KEY (`tx_id`,`params_to`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Table structure for whitelist
+-- ----------------------------
+DROP TABLE IF EXISTS `whitelist`;
+CREATE TABLE `whitelist` (
+  `ip` varchar(128) NOT NULL COMMENT 'You can allow the ip use get or post of your API.',
+  `domain` varchar(255) DEFAULT NULL,
+  `type` varchar(16) DEFAULT NULL COMMENT 'get/post',
+  PRIMARY KEY (`ip`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;

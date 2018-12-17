@@ -7,7 +7,7 @@ const aelf = {
     // the rpc URL of the AElf Chain Node.
     // network: 'http://172.31.5.155:8000/chain',
     network: 'http://localhost:1234/chain',
-    contract: '0xfe9f895a9f425c4ec3dc5c54bfce9908f03b'
+    contract: 'ELF_29SBBuPHNmZt2bNFcei15Jq5hN5pJdd6Ry48ucHPy5baEwY1RS'
 };
 
 const mysql = {
@@ -24,7 +24,8 @@ const mysql = {
         // password: '',
         password: 'password',
         // 数据库名
-        database: 'aelf_test',
+        // database: 'aelf_test',
+        database: 'aelf_test_01',
         // database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
@@ -51,9 +52,10 @@ const log4js = {
 module.exports = {
     mysql: mysql,
     scanTimeInterval: 4000,
-    scanLimit: 100,
+    scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
+    initTPSAcquisition: true,
     // scanLimit: 12,
     log4js: log4js,
     aelf: aelf

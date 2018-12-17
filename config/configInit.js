@@ -19,6 +19,11 @@ function getTpsStopCommandList() {
     return [stopCommand];
 }
 
+function getTpsRestartCommandList() {
+    const restartCommand = 'pm2 restart aelf-block-scan-tps';
+    return [restartCommand];
+}
+
 // if (envIsProduction) {
 //     console.log = function () {};
 // }
@@ -26,5 +31,6 @@ function getTpsStopCommandList() {
 module.exports = {
     config,
     getTpsStartCommandList,
-    getTpsStopCommandList
+    getTpsStopCommandList,
+    getTpsRestartCommandList
 };
