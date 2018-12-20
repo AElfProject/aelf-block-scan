@@ -244,7 +244,7 @@ function scanABlockPromise(listIndex, pool) {
                 };
 
                 // console.log('block_hash: ', blockInfoFormatted.block_hash, ' || ', listIndex, txLength);
-
+                // console.log(listIndex, blockInfo);
                 if (txLength) {
                     let transactionPromises = getTransactionPromises(result);
 
@@ -350,6 +350,31 @@ function getTransactionPromises(block) {
     let transactionPromises = [];
     const PAGELIMIT = 100;
 
+    transactionPromises = getTxResultPromises(transactions, txLength, blockHeight);
+    // transactionPromises = getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight);
+
+    return transactionPromises;
+}
+
+function getTxResultPromises(transactions, txLength, blockHeight) {
+    let transactionPromises = [];
+    for (let i = 0; i < txLength; i++) {
+        transactionPromises.push(new Promise((resolve, reject) => {
+            aelf.chain.getTxResult(transactions[i], (error, result) => {
+                if (error || !result) {
+                    console.log('error result getTxResult: ', blockHeight, result, error);
+                    reject(error);
+                } else {
+                    resolve(result.result);
+                }
+            });
+        }));
+    }
+    return transactionPromises;
+}
+
+function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
+    let transactionPromises = [];
     for (let offset = 0; offset < txLength; offset += PAGELIMIT) {
         transactionPromises.push(new Promise((resolve, reject) => {
             aelf.chain.getTxsResult(

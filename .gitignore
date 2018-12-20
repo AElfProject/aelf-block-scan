@@ -7,4 +7,5 @@ config/config.local.js
 config/config.*.js
 **.bak
 log.js
+.idea/
 .node-xmlhttprequest-**

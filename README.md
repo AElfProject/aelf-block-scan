@@ -46,7 +46,7 @@ Reset max connections Demo
 
 ```shell
 npm install
-copy ./config/config.example.js ./config/config.js 
+cp ./config/config.example.js ./config/config.js 
 // add your own config
 
 pm2 start index.js --name aelf-block-scan
