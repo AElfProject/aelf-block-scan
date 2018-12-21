@@ -52,6 +52,7 @@ function init() {
 
 let restartTime = 0;
 let restartTimer = null;
+let restartInfoTimer = null;
 process.on('uncaughtException', (err) => {
     if (!err.toString().match('Invalid JSON RPC response')) {
         return;
@@ -60,12 +61,16 @@ process.on('uncaughtException', (err) => {
     restart(err);
 });
 function restart(err, info = '') {
-    stopTpsAcquisition();
-    logger.error(`Err: ${err}, ExtraInfo: ${info}`);
-    console.log('捕获到异常, 1分钟后重启: ', err);
-    restartTime++;
     clearTimeout(restartTimer);
+    clearTimeout(restartInfoTimer);
+
+    restartInfoTimer = setTimeout(() => {
+        stopTpsAcquisition();
+        logger.error(`Err: ${err}, ExtraInfo: ${info}`);
+        console.log('捕获到异常, 1分钟后重启: ', err);
+    }, 100);
     restartTimer = setTimeout(() => {
+        restartTime++;
         logger.error(`第 ${restartTime} 次重启中》》》》》》》》》》`);
         init();
     }, restartTimeInterval);
