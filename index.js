@@ -115,7 +115,7 @@ function scanTimerInit(pool, scanLimit) {
 async function subscribe(pool, scanLimit) {
 
     let lastestBlockInDatabase = await queryPromise(pool, 'select block_height from blocks_0 ORDER BY block_height DESC limit 1');
-    let blockHeightInDataBase = 1;
+    let blockHeightInDataBase = 0;
     if (lastestBlockInDatabase && lastestBlockInDatabase[0] && lastestBlockInDatabase[0].block_height) {
         blockHeightInDataBase = parseInt(lastestBlockInDatabase[0].block_height, 10);
     }

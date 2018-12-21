@@ -9,3 +9,4 @@ config/config.*.js
 log.js
 .idea/
 .node-xmlhttprequest-**
+.DS_Store
