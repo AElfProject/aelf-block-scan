@@ -5,6 +5,7 @@
 Ensure dependencies are ready.(nodejs, pm2, mysql & database & tables)
 
 ```shell
+# bash, but not sh build.sh
 bash build.sh < type> < npm action>
 # Demos
 bash build.sh dev
@@ -64,6 +65,8 @@ cp ./config/config.example.js ./config/config.local.js
 
 # set your own aelf, mysql config at first.
 ```
+
+If you want set up tps acquisition, please set initTPSAcquisition=ture.
 
 ### 4.Start the node Server
 

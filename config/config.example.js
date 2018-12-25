@@ -49,6 +49,7 @@ module.exports = {
     scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
+    initTPSAcquisition: true,
     // scanLimit: 12,
     log4js: log4js,
     aelf: aelf
