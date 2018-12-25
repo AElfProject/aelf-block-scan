@@ -1,8 +1,14 @@
 # AElf Block Scan
 
+A tool to scan the AElf Chain.
+
+- We can insert the data(transactions/blocks/token_contract) of AElf Chain into Databases(only mysql now) through this tool.
+- We can collect the TPM(transactions per minutes).`optional`
+
 ## Quicke Start
 
-Ensure dependencies are ready.(nodejs, pm2, mysql & database & tables)
+- Ensure dependencies are ready.(nodejs, pm2, mysql)
+- Ensure config are ready.(mysql, RPC URL, TPM, etc.)
 
 ```shell
 # bash, but not sh build.sh
@@ -64,9 +70,10 @@ cp ./config/config.example.js ./config/config.js
 cp ./config/config.example.js ./config/config.local.js
 
 # set your own aelf, mysql config at first.
-```
 
-If you want set up tps acquisition, please set initTPSAcquisition=ture.
+# If you want to collect the TPM.
+set initTPSAcquisition=ture.
+```
 
 ### 4.Start the node Server
 
