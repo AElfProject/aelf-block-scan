@@ -9,6 +9,7 @@ A tool to scan the AElf Chain.
 
 - Ensure dependencies are ready.(nodejs, pm2, mysql)
 - Ensure config are ready.(mysql, RPC URL, TPM, etc.)
+- If you running your own AElf Chain. Please make sure the token contract is ready.
 
 ```shell
 # bash, but not sh build.sh
@@ -40,20 +41,23 @@ npm install -g pm2
 
 ### 2.Initialize Mysql Database
 
-`init_sql.sh` for you info.
+`init_sql.sh` for you information.
 
-Warning: 
+Warning:
 
 - Please pay attention to Mysql connectionLimit. The Default connectionLimit of Mysql is 100.
 - Please do not use admin. Use the normal users without SUPER privilege.
 
 Grant Demo
+
 ```bash
+# Use the smallest privilege.
 CREATE USER 'normal_aelf'@'localhost' IDENTIFIED BY 'password';
 GRANT select, insert, update, delete on aelf_test.* TO 'normal_aelf'@'localhost';
 ```
 
 Reset max connections Demo
+
 ```bash
 mysql> show variables like 'max_connections';
 mysql> set GLOBAL max_connections=650;
@@ -72,6 +76,7 @@ cp ./config/config.example.js ./config/config.local.js
 # set your own aelf, mysql config at first.
 
 # If you want to collect the TPM.
+# In config.js or config.local.js
 set initTPSAcquisition=ture.
 ```
 
@@ -80,6 +85,7 @@ set initTPSAcquisition=ture.
 You can use build.sh now.
 
 Or start the server manually.
+
 ```bash
 # You can see the detail in build.sh
 npm install

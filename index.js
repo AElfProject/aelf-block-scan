@@ -18,11 +18,19 @@ const {
 } = require('./tps/initTpsAcquisition');
 
 const {blockInfoFormat, transactionFormat} = require('./lib/format.js');
-const {insertTransactions, insertBlock} = require('./lib/insertPure.js');
+const {
+    insertTransactions,
+    insertBlock,
+    insertContract
+} = require('./lib/insertPure.js');
 const missingList = require('./lib/missingList');
 const {queryPromise} = require('./lib/mysql/queryPromise');
 const {getConnectionPromise} = require('./lib/mysql/getConnectionPromise');
 const {beginTransaction} = require('./lib/mysql/beginTransaction');
+
+const {
+    hexToString
+} = require('./utils/utils');
 
 const mysql = require('mysql');
 
@@ -31,7 +39,15 @@ log4js.configure(config.log4js);
 const logger = log4js.getLogger('scan');
 
 let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
-const {scanLimit, scanTimeInterval, restartTimeInterval, restartScanMissingListLimit} = config;
+const {
+    scanLimit,
+    scanTimeInterval,
+    restartTimeInterval,
+    restartScanMissingListLimit
+} = config;
+const {
+    commonPrivateKey
+} = config.aelf;
 
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
@@ -39,14 +55,15 @@ const {scanLimit, scanTimeInterval, restartTimeInterval, restartScanMissingListL
 init();
 
 function init() {
-    aelf.chain.connectChain(err => {
+    aelf.chain.connectChain((err, chainInfo) => {
         if (err) {
             logger.error('aelf.chain.connectChain err: ', err);
         }
 
+        console.log(chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
+        insertTokenInfo(aelfPool, chainInfo);
         startScan(aelfPool, scanLimit);
-
     });
 }
 
@@ -57,6 +74,7 @@ process.on('uncaughtException', (err) => {
     if (!err.toString().match('Invalid JSON RPC response')) {
         return;
     }
+
     // Error: Invalid JSON RPC response: undefined
     restart(err);
 });
@@ -123,7 +141,8 @@ async function subscribe(pool, scanLimit) {
     let blockHeightInChain;
     try {
         blockHeightInChain = parseInt(aelf.chain.getBlockHeight().result.block_height, 10);
-    } catch(err) {
+    }
+    catch (err) {
         restart(err, 'subscribe -> getBlockHeight()');
         return;
     }
@@ -145,7 +164,7 @@ async function subscribe(pool, scanLimit) {
 
     let startTime = new Date().getTime();
     Promise.all(scanBlocksPromises).then(() => {
-    // Promise.all(promises).then(result => {
+        // Promise.all(promises).then(result => {
         subscribe(pool, scanLimit);
         console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime);
         scanTime = 0;
@@ -164,6 +183,7 @@ function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
         reject('');
         return;
     }
+
     if (length === 0) {
         resove();
         return;
@@ -236,7 +256,7 @@ function scanABlockPromise(listIndex, pool) {
             try {
                 let blockInfo = result.result;
                 let transactions = blockInfo.Body.Transactions;
-                let blockInfoFormatted  = blockInfoFormat(blockInfo);
+                let blockInfoFormatted = blockInfoFormat(blockInfo);
                 let txLength = transactions.length;
 
                 let insertOptions = {
@@ -286,10 +306,18 @@ function scanABlockPromise(listIndex, pool) {
             }
         });
     });
-};
+}
 
 async function insertBlockAndTxs(option) {
-    const {pool, transactionsDetail, blockInfoFormatted, successCallback, failedCallback, listIndex, txLength} = option;
+    const {
+        pool,
+        transactionsDetail,
+        blockInfoFormatted,
+        successCallback,
+        failedCallback,
+        listIndex,
+        txLength
+    } = option;
 
     let connection = await getConnectionPromise(pool);
 
@@ -302,16 +330,17 @@ async function insertBlockAndTxs(option) {
         connection.commit(err => {
             if (err) {
                 console.log('connection.commit rollback!');
-                connection.rollback(function() {
+                connection.rollback(function () {
                     connection.release();
                     failedCallback({
                         errType: `Block Height: ${listIndex}`
-                        + '[insertTranPromise, insertBlockPromise]Promise.all then rollback',
+                            + '[insertTranPromise, insertBlockPromise]Promise.all then rollback',
                         err: err,
                         result: result
                     });
                 });
-            } else {
+            }
+            else {
                 console.log('block_hash: ', blockInfoFormatted.block_hash, ' || ', listIndex, txLength);
                 connection.release();
                 successCallback('', result);
@@ -320,7 +349,7 @@ async function insertBlockAndTxs(option) {
 
     }).catch(err => {
         console.log('connection.commit rollback! catch');
-        connection.rollback(function() {
+        connection.rollback(function () {
             connection.release();
             failedCallback({
                 errType: `Block Height: ${listIndex} [insertTranPromise, insertBlockPromise]Promise.all catch rollback`,
@@ -331,7 +360,13 @@ async function insertBlockAndTxs(option) {
 }
 
 async function insertOnlyBlock(option) {
-    const {pool, blockInfoFormatted, successCallback, failedCallback, listIndex} = option;
+    const {
+        pool,
+        blockInfoFormatted,
+        successCallback,
+        failedCallback,
+        listIndex
+    } = option;
     let connection = await getConnectionPromise(pool);
     insertBlock(blockInfoFormatted, connection, 'blocks_0').then(result => {
         connection.release();
@@ -369,7 +404,8 @@ function getTxResultPromises(transactions, txLength, blockHeight) {
                 if (error || !result) {
                     console.log('error result getTxResult: ', blockHeight, result, error);
                     reject(error);
-                } else {
+                }
+                else {
                     resolve(result.result);
                 }
             });
@@ -382,11 +418,10 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
     let transactionPromises = [];
     for (let offset = 0; offset < txLength; offset += PAGELIMIT) {
         transactionPromises.push(new Promise((resolve, reject) => {
-            aelf.chain.getTxsResult(
+            return aelf.chain.getTxsResult(
                 blockHash,
                 offset,
-                PAGELIMIT,
-                function (error, result) {
+                PAGELIMIT, function (error, result) {
                     if (error || !result || !result.result) {
                         console.log('error result getTxsResult: ', blockHeight, result, error);
                         logger.error('error result getTxsResult: ', blockHeight, result, error);
@@ -401,4 +436,22 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
         }));
     }
     return transactionPromises;
+}
+
+function insertTokenInfo(connection, chainInfo) {
+    var wallet = Aelf.wallet.getWalletByPrivateKey(commonPrivateKey);
+    const tokenContractAddress = chainInfo.result['AElf.Contracts.Token'];
+    const chainID = chainInfo.result.chain_id;
+    const tokenContractMethods = aelf.chain.contractAt(tokenContractAddress, wallet);
+    const tokenInfo = [
+        tokenContractAddress, chainID,
+        'block_hash',
+        'txid',
+        hexToString(tokenContractMethods.Symbol().return),
+        hexToString(tokenContractMethods.TokenName().return),
+        parseInt(tokenContractMethods.TotalSupply().return, 16),
+        parseInt(tokenContractMethods.Decimals().return, 16)
+    ];
+    console.log('tokenInfo', tokenInfo);
+    insertContract(tokenInfo, connection, 'contract_aelf20');
 }

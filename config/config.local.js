@@ -5,9 +5,7 @@
 const aelf = {
     commonPrivateKey: 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71',
     // the rpc URL of the AElf Chain Node.
-    // network: 'http://172.31.5.155:8000/chain',
-    network: 'http://localhost:1234/chain',
-    contract: 'ELF_29SBBuPHNmZt2bNFcei15Jq5hN5pJdd6Ry48ucHPy5baEwY1RS'
+    network: 'http://localhost:1234/chain'
 };
 
 const mysql = {
