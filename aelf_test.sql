@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 17/12/2018 16:51:32
+ Date: 07/01/2019 16:37:40
 */
 
 SET NAMES utf8mb4;
@@ -40,7 +40,7 @@ CREATE TABLE `blocks_0` (
   `tx_count` int(32) NOT NULL,
   `merkle_root_tx` varchar(64) NOT NULL,
   `merkle_root_state` varchar(64) NOT NULL,
-  `time` varchar(255) NOT NULL COMMENT '直接转存节点来的',
+  `time` varchar(64) NOT NULL COMMENT '直接转存节点来的',
   PRIMARY KEY (`block_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -68,9 +68,9 @@ CREATE TABLE `nodes_0` (
   `contract_address` varchar(64) NOT NULL COMMENT 'token contract address',
   `chain_id` varchar(64) NOT NULL,
   `api_ip` varchar(128) NOT NULL,
-  `api_domain` varchar(255) DEFAULT NULL,
+  `api_domain` varchar(255) NOT NULL,
   `rpc_ip` varchar(128) NOT NULL,
-  `rpc_domain` varchar(255) DEFAULT NULL,
+  `rpc_domain` varchar(255) NOT NULL,
   `token_name` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
   `status` int(1) NOT NULL,
@@ -110,6 +110,7 @@ CREATE TABLE `transactions_0` (
   `increment_id` int(32) unsigned NOT NULL,
   `quantity` bigint(64) unsigned NOT NULL,
   `tx_status` varchar(64) NOT NULL,
+  `time` varchar(64) NOT NULL COMMENT 'time of blocks',
   PRIMARY KEY (`tx_id`,`params_to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
