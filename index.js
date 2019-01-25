@@ -452,6 +452,7 @@ function insertTokenInfo(connection, chainInfo) {
     var wallet = Aelf.wallet.getWalletByPrivateKey(commonPrivateKey);
     const tokenContractAddress = chainInfo.result['AElf.Contracts.Token'];
     const chainID = chainInfo.result.chain_id;
+    // 这里是同步请求
     const tokenContractMethods = aelf.chain.contractAt(tokenContractAddress, wallet);
     const tokenInfo = [
         tokenContractAddress, chainID,
