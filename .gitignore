@@ -8,5 +8,6 @@ config/config.*.js
 **.bak
 log.js
 .idea/
+.vscode/
 .node-xmlhttprequest-**
 .DS_Store

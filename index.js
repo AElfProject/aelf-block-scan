@@ -20,6 +20,7 @@ const {
 const {blockInfoFormat, transactionFormat} = require('./lib/format.js');
 const {
     insertTransactions,
+    // insertResourceTransactions,
     insertBlock,
     insertContract
 } = require('./lib/insertPure.js');
@@ -44,11 +45,16 @@ const {
     scanTimeInterval,
     restartTimeInterval,
     restartScanMissingListLimit
+    // ,resourceContractAddress
 } = config;
 const {
     commonPrivateKey
 } = config.aelf;
 
+let contractAddressList = {
+    token: null,
+    // resource: resourceContractAddress
+};
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
@@ -62,7 +68,7 @@ function init() {
 
         console.log(chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
-        insertTokenInfo(aelfPool, chainInfo);
+        contractAddressList.token = insertTokenInfo(aelfPool, chainInfo); // return tokenContractAddress
         startScan(aelfPool, scanLimit);
     });
 }
@@ -197,7 +203,6 @@ function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
     });
 
     Promise.all(scanMissingBlocksPromises).then(() => {
-        console.log(1111);
         restartCount = 0;
         scanMissingList({
             list: listTodo,
@@ -242,6 +247,7 @@ function scanABlockPromise(listIndex, pool) {
             reject(err);
         };
 
+        // aelf.chain.getBlockInfo(1545, true, async (err, result) => {
         aelf.chain.getBlockInfo(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
@@ -279,7 +285,9 @@ function scanABlockPromise(listIndex, pool) {
 
                         scanTime += (new Date().getTime()) - startTime;
 
-                        insertOptions.transactionsDetail = txsList.map(item => transactionFormat(item, blockInfoFormatted));
+                        insertOptions.transactionsDetail = txsList.map(item => {
+                            return transactionFormat(item, blockInfoFormatted, contractAddressList)
+                        });
 
                         insertBlockAndTxs(insertOptions);
 
@@ -324,6 +332,8 @@ async function insertBlockAndTxs(option) {
     beginTransaction(connection);
 
     let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
+    // let insertResourceTranPromise
+    //     = insertResourceTransactions(transactionsDetail, connection, 'resource_0', contractAddressList);
     let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
 
     Promise.all([insertTranPromise, insertBlockPromise]).then(result => {
@@ -390,29 +400,29 @@ function getTransactionPromises(block) {
     let transactionPromises = [];
     const PAGELIMIT = 100;
 
-    transactionPromises = getTxResultPromises(transactions, txLength, blockHeight);
-    // transactionPromises = getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight);
+    // transactionPromises = getTxResultPromises(transactions, txLength, blockHeight);
+    transactionPromises = getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight);
 
     return transactionPromises;
 }
 
-function getTxResultPromises(transactions, txLength, blockHeight) {
-    let transactionPromises = [];
-    for (let i = 0; i < txLength; i++) {
-        transactionPromises.push(new Promise((resolve, reject) => {
-            aelf.chain.getTxResult(transactions[i], (error, result) => {
-                if (error || !result) {
-                    console.log('error result getTxResult: ', blockHeight, result, error);
-                    reject(error);
-                }
-                else {
-                    resolve(result.result);
-                }
-            });
-        }));
-    }
-    return transactionPromises;
-}
+// function getTxResultPromises(transactions, txLength, blockHeight) {
+//     let transactionPromises = [];
+//     for (let i = 0; i < txLength; i++) {
+//         transactionPromises.push(new Promise((resolve, reject) => {
+//             aelf.chain.getTxResult(transactions[i], (error, result) => {
+//                 if (error || !result) {
+//                     console.log('error result getTxResult: ', blockHeight, result, error);
+//                     reject(error);
+//                 }
+//                 else {
+//                     resolve(result.result);
+//                 }
+//             });
+//         }));
+//     }
+//     return transactionPromises;
+// }
 
 function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
     let transactionPromises = [];
@@ -423,8 +433,8 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
                 offset,
                 PAGELIMIT, function (error, result) {
                     if (error || !result || !result.result) {
-                        console.log('error result getTxsResult: ', blockHeight, result, error);
-                        logger.error('error result getTxsResult: ', blockHeight, result, error);
+                        console.log('error result getTxsResult: ', blockHeight, blockHash, result, error);
+                        logger.error('error result getTxsResult: ', blockHeight, blockHash, result, error);
                         reject(error);
                     }
                     else {
@@ -454,4 +464,5 @@ function insertTokenInfo(connection, chainInfo) {
     ];
     console.log('tokenInfo', tokenInfo);
     insertContract(tokenInfo, connection, 'contract_aelf20');
+    return tokenContractAddress;
 }

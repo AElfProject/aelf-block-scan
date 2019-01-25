@@ -5,7 +5,8 @@
 const aelf = {
     commonPrivateKey: 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71',
     // the rpc URL of the AElf Chain Node.
-    network: 'http://localhost:1234/chain'
+    // network: 'http://localhost:1234/chain'
+    network: 'http://192.168.199.210:5000/chain'
 };
 
 const mysql = {
@@ -16,14 +17,16 @@ const mysql = {
         // 端口号
         port: '3306',
         // 用户名
-        user: 'normal_aelf',
+        // user: 'normal_aelf',
+        user: 'normal_aelf_mh',
         // user: 'root',
         // 密码
         // password: '',
         password: 'password',
         // 数据库名
         // database: 'aelf_test',
-        database: 'aelf_test_01',
+        // database: 'aelf_test_01',
+        database: 'aelf_test_minghui',
         // database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
@@ -53,8 +56,9 @@ module.exports = {
     scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
-    initTPSAcquisition: true,
+    initTPSAcquisition: false,
     // scanLimit: 12,
     log4js: log4js,
+    resourceContractAddress: 'ELF_47dpXA3aEuDj9yeq9Et2E4zjPrSs4uQpzdFkYuBZEEQmob',
     aelf: aelf
 };
