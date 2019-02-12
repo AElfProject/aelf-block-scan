@@ -20,7 +20,7 @@ const {
 const {blockInfoFormat, transactionFormat} = require('./lib/format.js');
 const {
     insertTransactions,
-    // insertResourceTransactions,
+    insertResourceTransactions,
     insertBlock,
     insertContract
 } = require('./lib/insertPure.js');
@@ -44,8 +44,8 @@ const {
     scanLimit,
     scanTimeInterval,
     restartTimeInterval,
-    restartScanMissingListLimit
-    // ,resourceContractAddress
+    restartScanMissingListLimit,
+    resourceContractAddress
 } = config;
 const {
     commonPrivateKey
@@ -53,7 +53,7 @@ const {
 
 let contractAddressList = {
     token: null,
-    // resource: resourceContractAddress
+    resource: resourceContractAddress
 };
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
@@ -167,6 +167,7 @@ async function subscribe(pool, scanLimit) {
     for (let i = blockHeightInDataBase + 1; i <= maxBlockHeight; i++) {
         scanBlocksPromises.push(scanABlockPromise(i, pool));
     }
+    // scanBlocksPromises.push(scanABlockPromise(23, pool));
 
     let startTime = new Date().getTime();
     Promise.all(scanBlocksPromises).then(() => {
@@ -332,11 +333,12 @@ async function insertBlockAndTxs(option) {
     beginTransaction(connection);
 
     let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
-    // let insertResourceTranPromise
-    //     = insertResourceTransactions(transactionsDetail, connection, 'resource_0', contractAddressList);
+    let insertResourceTranPromise
+        = insertResourceTransactions(transactionsDetail, connection, 'resource_0', contractAddressList);
     let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
 
-    Promise.all([insertTranPromise, insertBlockPromise]).then(result => {
+    // Promise.all([insertTranPromise, insertBlockPromise]).then(result => {
+    Promise.all([insertTranPromise, insertResourceTranPromise, insertBlockPromise]).then(result => {
         connection.commit(err => {
             if (err) {
                 console.log('connection.commit rollback!');

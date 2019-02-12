@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message ResourceBought {
+    uint64 PaidElf = 1;
+    uint64 ReceivedResource = 2;
+}
+
+message ResourceSold {
+    uint64 PaidResource = 1;
+    uint64 ReceivedElf = 2;
+}
