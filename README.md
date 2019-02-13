@@ -78,6 +78,9 @@ cp ./config/config.example.js ./config/config.local.js
 # If you want to collect the TPM.
 # In config.js or config.local.js
 set initTPSAcquisition=ture.
+# If you want to collect the data of resource system
+# In config.js or config.local.js
+set resourceContractAddress=your resource contract address
 ```
 
 ### 4.Start the node Server
