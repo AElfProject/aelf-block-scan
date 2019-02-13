@@ -63,7 +63,8 @@ module.exports = {
     restartScanMissingListLimit: 3,
     initTPSAcquisition: false,
     // scanLimit: 12,
-    log4js: log4js,
+    // if !!resourceContractAddress === false, we will not acquisite resource.
     resourceContractAddress: 'ELF_4CBbRKd6rkCzTX5aJ2mnGrwJiHLmGdJZinoaVfMvScTEoBR',
+    log4js: log4js,
     aelf: aelf
 };
