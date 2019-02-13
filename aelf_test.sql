@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 100309
  Source Host           : localhost:3306
- Source Schema         : aelf_test_01
+ Source Schema         : aelf_test_minghui
 
  Target Server Type    : MySQL
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 07/01/2019 16:37:40
+ Date: 13/02/2019 10:55:00
 */
 
 SET NAMES utf8mb4;
@@ -77,6 +77,25 @@ CREATE TABLE `nodes_0` (
   `create_time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`contract_address`,`chain_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Table structure for resource_0
+-- ----------------------------
+DROP TABLE IF EXISTS `resource_0`;
+CREATE TABLE `resource_0` (
+  `tx_id` varchar(64) NOT NULL,
+  `address` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `type` varchar(8) NOT NULL COMMENT 'resource type',
+  `resource` int(64) NOT NULL COMMENT 'quantity of resource',
+  `elf` int(64) NOT NULL COMMENT 'quantity of resource',
+  `fee` int(64) NOT NULL COMMENT 'quantity of resource',
+  `chain_id` varchar(64) NOT NULL,
+  `block_height` int(32) NOT NULL,
+  `tx_status` varchar(64) NOT NULL,
+  `time` bigint(64) NOT NULL,
+  PRIMARY KEY (`tx_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Table structure for tps_0
