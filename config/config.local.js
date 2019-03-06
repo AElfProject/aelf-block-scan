@@ -71,6 +71,7 @@ module.exports = {
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
     // removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
+    criticalBlocksCounts: 60, // 假定的不可回滚块高度。
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: false,
     // scanLimit: 12,

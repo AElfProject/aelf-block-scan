@@ -49,7 +49,8 @@ const {
     restartTimeInterval,
     restartScanMissingListLimit,
     resourceContractAddress,
-    removeUnconfirmedDataInterval
+    removeUnconfirmedDataInterval,
+    criticalBlocksCounts
 } = config;
 
 const {
@@ -154,7 +155,6 @@ async function startScan(pool, scanLimit) {
 // 1.插入到unconfirmed库。
 // 2.落后N个块的数据，插入到confirmed库。
 async function subscribe(pool, scanLimit) {
-    const criticalBlocksCounts = 60;
     let blockHeightInDataBase = 0;
     let blockHeightInDataBaseUnconfirmed = 0;
     let blockHeightInChain;

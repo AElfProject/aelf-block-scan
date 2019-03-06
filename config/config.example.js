@@ -53,6 +53,7 @@ module.exports = {
     scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
+    criticalBlocksCounts: 60,
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: false,
     // if !!resourceContractAddress === false, we will not acquisite resource.
