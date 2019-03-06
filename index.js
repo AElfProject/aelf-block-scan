@@ -33,6 +33,9 @@ const {
     hexToString
 } = require('./utils/utils');
 
+const ScanTimer = require('./utils/ScanTimer'); 
+const BlockUnconfirmed = require('./unconfirmed/removeRedundantData');
+
 const mysql = require('mysql');
 
 let {config} = require('./config/configInit.js');
@@ -45,8 +48,10 @@ const {
     scanTimeInterval,
     restartTimeInterval,
     restartScanMissingListLimit,
-    resourceContractAddress
+    resourceContractAddress,
+    removeUnconfirmedDataInterval
 } = config;
+
 const {
     commonPrivateKey
 } = config.aelf;
@@ -55,6 +60,22 @@ let contractAddressList = {
     token: null,
     resource: resourceContractAddress
 };
+
+const {
+    confirmedSuffix,
+    unconfirmedSuffix,
+    unConfirmedTables
+} = config.dbTable;
+console.log('-----dbConfirmedSuffix ', config.dbTable, confirmedSuffix, unconfirmedSuffix);
+
+const blockUnconfirmed = new BlockUnconfirmed({
+    removeUnconfirmedDataInterval,
+    unConfirmedTables
+});
+const scanTimer = new ScanTimer({
+    callback: subscribe,
+    interval: scanTimeInterval
+});
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
@@ -129,22 +150,27 @@ async function startScan(pool, scanLimit) {
     });
 }
 
-function scanTimerInit(pool, scanLimit) {
-    setTimeout(() => {
-        subscribe(pool, scanLimit);
-    }, scanTimeInterval);
-}
-
 // subscribe 是真正定时任务执行时被运行的函数
+// 1.插入到unconfirmed库。
+// 2.落后N个块的数据，插入到confirmed库。
 async function subscribe(pool, scanLimit) {
+    const criticalBlocksCounts = 60;
+    let blockHeightInDataBase = 0;
+    let blockHeightInDataBaseUnconfirmed = 0;
+    let blockHeightInChain;
+    let criticalHeight;
 
     let lastestBlockInDatabase = await queryPromise(pool, 'select block_height from blocks_0 ORDER BY block_height DESC limit 1');
-    let blockHeightInDataBase = 0;
+    let lastestBlockInDatabaseUnconfirmed
+        = await queryPromise(pool, 'select block_height from blocks_unconfirmed ORDER BY block_height DESC limit 1');
+
     if (lastestBlockInDatabase && lastestBlockInDatabase[0] && lastestBlockInDatabase[0].block_height) {
         blockHeightInDataBase = parseInt(lastestBlockInDatabase[0].block_height, 10);
     }
+    if (lastestBlockInDatabaseUnconfirmed && lastestBlockInDatabaseUnconfirmed[0] && lastestBlockInDatabaseUnconfirmed[0].block_height) {
+        blockHeightInDataBaseUnconfirmed = parseInt(lastestBlockInDatabaseUnconfirmed[0].block_height, 10);
+    }
 
-    let blockHeightInChain;
     try {
         blockHeightInChain = parseInt(aelf.chain.getBlockHeight().result.block_height, 10);
     }
@@ -153,24 +179,38 @@ async function subscribe(pool, scanLimit) {
         return;
     }
 
+    criticalHeight = blockHeightInChain - criticalBlocksCounts;
+
     console.log('blockHeightInDataBase: ', blockHeightInDataBase);
+    console.log('blockHeightInDataBaseUnconfirmed: ', blockHeightInDataBaseUnconfirmed);
     console.log('blockHeightInChain: ', blockHeightInChain);
 
-    if (blockHeightInDataBase >= blockHeightInChain) {
-        scanTimerInit(pool, scanLimit);
+    if (blockHeightInDataBase >= blockHeightInChain - criticalBlocksCounts) {
+        scanTimer.startTimer(pool, scanLimit);
         startTpsAcquisition();
+        blockUnconfirmed.removeRedundantData(pool, Math.min(criticalHeight - 100, blockHeightInDataBaseUnconfirmed - criticalBlocksCounts), scanTimer);
         return;
     }
 
-    let maxBlockHeight = Math.min(blockHeightInDataBase + scanLimit, blockHeightInChain);
+    let maxBlockHeight = Math.min(blockHeightInDataBase + scanLimit, blockHeightInChain - criticalBlocksCounts);
+
     const scanBlocksPromises = [];
     for (let i = blockHeightInDataBase + 1; i <= maxBlockHeight; i++) {
         scanBlocksPromises.push(scanABlockPromise(i, pool));
     }
-    // scanBlocksPromises.push(scanABlockPromise(23, pool));
+
+    const scanBlocksPromisesUnconfirmed = [];
+    if (blockHeightInDataBase + 1 >= criticalHeight) {
+        blockHeightInDataBaseUnconfirmed = Math.max(criticalHeight, blockHeightInDataBaseUnconfirmed);
+        
+        for (let i = blockHeightInDataBaseUnconfirmed + 1; i <= blockHeightInChain; i++) {
+            scanBlocksPromisesUnconfirmed.push(scanAUnconfirmedBlockPromise(i, pool));
+        }
+    }
 
     let startTime = new Date().getTime();
-    Promise.all(scanBlocksPromises).then(() => {
+    // Promise.all(scanBlocksPromises).then(() => {
+    Promise.all([...scanBlocksPromises, ...scanBlocksPromisesUnconfirmed]).then(() => {
         // Promise.all(promises).then(result => {
         subscribe(pool, scanLimit);
         console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime);
@@ -228,7 +268,7 @@ function scanMissingList(missingList, pool, resove, reject, restartCount = 0) {
  *
  * @return {Object} Promise
  */
-function scanABlockPromise(listIndex, pool) {
+function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
     return new Promise((resolve, reject) => {
         let startTime = new Date().getTime(); // 统计用
 
@@ -290,6 +330,8 @@ function scanABlockPromise(listIndex, pool) {
                             return transactionFormat(item, blockInfoFormatted, contractAddressList)
                         });
 
+                        insertOptions.isUnconfirmed = isUnconfirmed;
+
                         insertBlockAndTxs(insertOptions);
 
                     }).catch(err => {
@@ -317,6 +359,10 @@ function scanABlockPromise(listIndex, pool) {
     });
 }
 
+function scanAUnconfirmedBlockPromise(listIndex, pool) {
+    return scanABlockPromise(listIndex, pool, true);
+}
+
 async function insertBlockAndTxs(option) {
     const {
         pool,
@@ -325,17 +371,23 @@ async function insertBlockAndTxs(option) {
         successCallback,
         failedCallback,
         listIndex,
-        txLength
+        txLength,
+        isUnconfirmed
     } = option;
 
+    const suffix = isUnconfirmed ? unconfirmedSuffix : confirmedSuffix;
     let connection = await getConnectionPromise(pool);
 
     beginTransaction(connection);
 
-    let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
+    // let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
+    // let insertResourceTranPromise
+    //     = insertResourceTransactions(transactionsDetail, connection, 'resource_0', contractAddressList);
+    // let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
+    let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions' + suffix);
     let insertResourceTranPromise
-        = insertResourceTransactions(transactionsDetail, connection, 'resource_0', contractAddressList);
-    let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
+        = insertResourceTransactions(transactionsDetail, connection, 'resource' + suffix, contractAddressList);
+    let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks' + suffix);
 
     // Promise.all([insertTranPromise, insertBlockPromise]).then(result => {
     Promise.all([insertTranPromise, insertResourceTranPromise, insertBlockPromise]).then(result => {

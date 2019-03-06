@@ -45,6 +45,22 @@ CREATE TABLE `blocks_0` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
+-- Table structure for blocks_unconfirmed
+-- ----------------------------
+DROP TABLE IF EXISTS `blocks_unconfirmed`;
+CREATE TABLE `blocks_unconfirmed` (
+  `block_hash` varchar(64) NOT NULL,
+  `pre_block_hash` varchar(64) NOT NULL,
+  `chain_id` varchar(64) NOT NULL,
+  `block_height` int(64) NOT NULL,
+  `tx_count` int(32) NOT NULL,
+  `merkle_root_tx` varchar(64) NOT NULL,
+  `merkle_root_state` varchar(64) NOT NULL,
+  `time` varchar(64) NOT NULL COMMENT '直接转存节点来的',
+  PRIMARY KEY (`block_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
 -- Table structure for contract_aelf20
 -- ----------------------------
 DROP TABLE IF EXISTS `contract_aelf20`;
@@ -98,6 +114,25 @@ CREATE TABLE `resource_0` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
+-- Table structure for resource_unconfirmed
+-- ----------------------------
+DROP TABLE IF EXISTS `resource_unconfirmed`;
+CREATE TABLE `resource_unconfirmed` (
+  `tx_id` varchar(64) NOT NULL,
+  `address` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `type` varchar(8) NOT NULL COMMENT 'resource type',
+  `resource` int(64) NOT NULL COMMENT 'quantity of resource',
+  `elf` int(64) NOT NULL COMMENT 'quantity of resource',
+  `fee` int(64) NOT NULL COMMENT 'quantity of resource',
+  `chain_id` varchar(64) NOT NULL,
+  `block_height` int(32) NOT NULL,
+  `tx_status` varchar(64) NOT NULL,
+  `time` bigint(64) NOT NULL,
+  PRIMARY KEY (`tx_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
 -- Table structure for tps_0
 -- ----------------------------
 DROP TABLE IF EXISTS `tps_0`;
@@ -117,6 +152,27 @@ CREATE TABLE `tps_0` (
 -- ----------------------------
 DROP TABLE IF EXISTS `transactions_0`;
 CREATE TABLE `transactions_0` (
+  `tx_id` varchar(64) NOT NULL,
+  `params_to` varchar(64) NOT NULL DEFAULT '-1' COMMENT 'target address',
+  `chain_id` varchar(64) NOT NULL,
+  `block_height` int(32) unsigned NOT NULL,
+  `address_from` varchar(64) NOT NULL,
+  `address_to` varchar(64) NOT NULL COMMENT 'contract address',
+  `params` text NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `block_hash` varchar(64) NOT NULL,
+  `increment_id` int(32) unsigned NOT NULL,
+  `quantity` bigint(64) unsigned NOT NULL,
+  `tx_status` varchar(64) NOT NULL,
+  `time` varchar(64) NOT NULL COMMENT 'time of blocks',
+  PRIMARY KEY (`tx_id`,`params_to`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Table structure for transactions_unconfirmed
+-- ----------------------------
+DROP TABLE IF EXISTS `transactions_unconfirmed`;
+CREATE TABLE `transactions_unconfirmed` (
   `tx_id` varchar(64) NOT NULL,
   `params_to` varchar(64) NOT NULL DEFAULT '-1' COMMENT 'target address',
   `chain_id` varchar(64) NOT NULL,

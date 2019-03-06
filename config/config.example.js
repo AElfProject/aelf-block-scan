@@ -41,12 +41,19 @@ const log4js = {
     }
 };
 
+const dbTable = {
+    confirmedSuffix: '_0',
+    unconfirmedSuffix: '_unconfirmed',
+    unConfirmedTables: ['blocks', 'transactions', 'resource']
+};
+
 module.exports = {
     mysql: mysql,
     scanTimeInterval: 4000,
     scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
+    removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: false,
     // if !!resourceContractAddress === false, we will not acquisite resource.
     resourceContractAddress: 'ELF_47dpXA3aEuDj9yeq9Et2E4zjPrSs4uQpzdFkYuBZEEQmob',
