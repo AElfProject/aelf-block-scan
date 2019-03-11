@@ -9,7 +9,8 @@ const aelf = {
     // network: 'http://34.212.171.27:8000/chain'
     // network: 'http://34.212.171.27:8000/chain'
     // network: 'http://192.168.199.210:5000/chain'
-    network: 'http://192.168.199.109:5000/chain'
+    // network: 'http://192.168.199.109:5000/chain'
+    network: 'http://192.168.197.56:8000/chain'
 };
 
 const mysql = {
@@ -33,7 +34,8 @@ const mysql = {
         // database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_minghui',
-        database: 'aelf_test_rollback',
+        // database: 'aelf_test_rollback',
+        database: 'aelf_test_newchain',
         // database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
@@ -67,16 +69,13 @@ module.exports = {
     mysql: mysql,
     dbTable,
     scanTimeInterval: 4000,
-    scanLimit: 10,
+    scanLimit: 50,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
     // removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     criticalBlocksCounts: 60, // 假定的不可回滚块高度。
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: false,
-    // scanLimit: 12,
-    // if !!resourceContractAddress === false, we will not acquisite resource.
-    resourceContractAddress: 'ELF_4CBbRKd6rkCzTX5aJ2mnGrwJiHLmGdJZinoaVfMvScTEoBR',
     log4js: log4js,
     aelf: aelf
 };

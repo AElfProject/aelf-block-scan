@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 100309
  Source Host           : localhost:3306
- Source Schema         : aelf_test_minghui
+ Source Schema         : aelf_test_rollback
 
  Target Server Type    : MySQL
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 13/02/2019 10:55:00
+ Date: 08/03/2019 15:50:18
 */
 
 SET NAMES utf8mb4;

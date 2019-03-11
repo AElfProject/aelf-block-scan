@@ -48,7 +48,6 @@ const {
     scanTimeInterval,
     restartTimeInterval,
     restartScanMissingListLimit,
-    resourceContractAddress,
     removeUnconfirmedDataInterval,
     criticalBlocksCounts
 } = config;
@@ -59,7 +58,7 @@ const {
 
 let contractAddressList = {
     token: null,
-    resource: resourceContractAddress
+    resource: null
 };
 
 const {
@@ -80,7 +79,11 @@ const scanTimer = new ScanTimer({
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
-init();
+try {
+    init();
+} catch(err) {
+    console.log('init error: ', err);
+}
 
 function init() {
     aelf.chain.connectChain((err, chainInfo) => {
@@ -88,9 +91,10 @@ function init() {
             logger.error('aelf.chain.connectChain err: ', err);
         }
 
-        console.log(chainInfo);
+        console.log('connnect chain: ', err, chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
         contractAddressList.token = insertTokenInfo(aelfPool, chainInfo); // return tokenContractAddress
+        contractAddressList.resource = chainInfo['AElf.Contracts.Resource'];
         startScan(aelfPool, scanLimit);
     });
 }
@@ -172,7 +176,7 @@ async function subscribe(pool, scanLimit) {
     }
 
     try {
-        blockHeightInChain = parseInt(aelf.chain.getBlockHeight().result.block_height, 10);
+        blockHeightInChain = parseInt(aelf.chain.getBlockHeight(), 10);
     }
     catch (err) {
         restart(err, 'subscribe -> getBlockHeight()');
@@ -197,6 +201,7 @@ async function subscribe(pool, scanLimit) {
     const scanBlocksPromises = [];
     for (let i = blockHeightInDataBase + 1; i <= maxBlockHeight; i++) {
         scanBlocksPromises.push(scanABlockPromise(i, pool));
+        // scanBlocksPromises.push(scanABlockPromise(4271, pool));
     }
 
     const scanBlocksPromisesUnconfirmed = [];
@@ -209,9 +214,7 @@ async function subscribe(pool, scanLimit) {
     }
 
     let startTime = new Date().getTime();
-    // Promise.all(scanBlocksPromises).then(() => {
     Promise.all([...scanBlocksPromises, ...scanBlocksPromisesUnconfirmed]).then(() => {
-        // Promise.all(promises).then(result => {
         subscribe(pool, scanLimit);
         console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime);
         scanTime = 0;
@@ -301,7 +304,7 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
             }
 
             try {
-                let blockInfo = result.result;
+                let blockInfo = result;
                 let transactions = blockInfo.Body.Transactions;
                 let blockInfoFormatted = blockInfoFormat(blockInfo);
                 let txLength = transactions.length;
@@ -353,7 +356,7 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
                     errType: 'Try Catch, Catch',
                     err: err
                 });
-                console.log('[error]rollback: ', listIndex, error);
+                console.log('[error]rollback: ', listIndex, err);
             }
         });
     });
@@ -446,9 +449,9 @@ async function insertOnlyBlock(option) {
 }
 
 function getTransactionPromises(block) {
-    const blockInfo = block.result;
-    const blockHash = blockInfo.Blockhash;
-    const blockHeight = blockInfo.Header.Index;
+    const blockInfo = block;
+    const blockHash = blockInfo.BlockHash;
+    const blockHeight = blockInfo.Header.Height;
     const transactions = blockInfo.Body.Transactions;
     const txLength = transactions.length;
     let transactionPromises = [];
@@ -486,13 +489,13 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
                 blockHash,
                 offset,
                 PAGELIMIT, function (error, result) {
-                    if (error || !result || !result.result) {
+                    if (error || !result) {
                         console.log('error result getTxsResult: ', blockHeight, blockHash, result, error);
                         logger.error('error result getTxsResult: ', blockHeight, blockHash, result, error);
                         reject(error);
                     }
                     else {
-                        const txsList = result.result || [];
+                        const txsList = result || [];
                         resolve(txsList);
                     }
                 }
@@ -504,18 +507,18 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
 
 function insertTokenInfo(connection, chainInfo) {
     var wallet = Aelf.wallet.getWalletByPrivateKey(commonPrivateKey);
-    const tokenContractAddress = chainInfo.result['AElf.Contracts.Token'];
-    const chainID = chainInfo.result.chain_id;
+    const tokenContractAddress = chainInfo['AElf.Contracts.Token'];
+    const chainID = chainInfo.ChainId;
     // 这里是同步请求
     const tokenContractMethods = aelf.chain.contractAt(tokenContractAddress, wallet);
     const tokenInfo = [
         tokenContractAddress, chainID,
         'block_hash',
         'txid',
-        hexToString(tokenContractMethods.Symbol().return),
-        hexToString(tokenContractMethods.TokenName().return),
-        parseInt(tokenContractMethods.TotalSupply().return, 16),
-        parseInt(tokenContractMethods.Decimals().return, 16)
+        hexToString(tokenContractMethods.Symbol()),
+        hexToString(tokenContractMethods.TokenName()),
+        parseInt(tokenContractMethods.TotalSupply(), 16),
+        parseInt(tokenContractMethods.Decimals(), 16)
     ];
     console.log('tokenInfo', tokenInfo);
     insertContract(tokenInfo, connection, 'contract_aelf20');
