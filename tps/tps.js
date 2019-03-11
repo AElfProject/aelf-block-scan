@@ -76,7 +76,8 @@ function getTpsTypeFilter(pool, startTimeUnix) {
     if (currentStartInterval > BATCHLIMITTIME) {
         if (currentStartInterval > BATCHDAYINTERVAL) {
             endTimeUnix = startTimeUnix + BATCHDAYINTERVAL;
-        } else {
+        }
+        else {
             endTimeUnix = CURRENTTIME - BATCHLIMITTIME;
         }
         insertBatch = true;
@@ -94,7 +95,7 @@ function getInsertTpsSql(tpsValueBlankString) {
         'blocks',
         'tps',
         'tpm',
-        'type',
+        'type'
     ];
 
     let tpsValuesBlank = tpsTableKeys.map(() => {
@@ -165,11 +166,17 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
     // startTimeUnix -= 1;
     const startTime = moment.unix(startTimeUnix).utc().format();
     const endTime = moment.unix(endTimeUnix).utc().format();
-    const blocks = await queryPromise(
+    const blocksConfirmed = await queryPromise(
         pool,
         'select * from blocks_0 where time between ? and ? order by time ASC',
         [startTime, endTime]
     );
+    const blocksUnconfirmed = await queryPromise(
+        pool,
+        'select * from blocks_unconfirmed where time between ? and ? order by time ASC',
+        [startTime, endTime]
+    );
+    const blocks = blocksConfirmed.length ? blocksConfirmed : blocksUnconfirmed;
 
     if (insertBatch) {
         let needInsertList = [];
@@ -185,7 +192,6 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
                 tpm: 0,
                 type: MINUTES
             };
-
             for (let index = 0, length = blocks.length; index < length; index++) {
                 const block = blocks[0];
                 const blockTime = block.time;
@@ -195,7 +201,8 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
                     option.txs += parseInt(block.tx_count, 10);
                     option.blocks++;
                     blocks.shift();
-                } else {
+                }
+                else {
                     break;
                 }
             }
@@ -217,7 +224,8 @@ async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
     if (newEndTimeUnix < (nowTimeUnix - DEALYTIME)) {
         await insertTps(pool, blocks, startTime, endTime);
         getTpsTypeFilter(pool, endTimeUnix);
-    } else {
+    }
+    else {
         console.log('into interval, interval seconds: ', SCANINTERVAL / 1000);
         setTimeout(function () {
             getTps(pool, startTimeUnix, endTimeUnix);
