@@ -40,7 +40,7 @@ const mysql = {
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
         // 链接池 链接上限
-        connectionLimit: 100
+        connectionLimit: 200
     }
 };
 
@@ -69,7 +69,7 @@ module.exports = {
     mysql: mysql,
     dbTable,
     scanTimeInterval: 4000,
-    scanLimit: 50,
+    scanLimit: 150,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
     // removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4

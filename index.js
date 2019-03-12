@@ -28,6 +28,7 @@ const missingList = require('./lib/missingList');
 const {queryPromise} = require('./lib/mysql/queryPromise');
 const {getConnectionPromise} = require('./lib/mysql/getConnectionPromise');
 const {beginTransaction} = require('./lib/mysql/beginTransaction');
+const protoDecode = require('./utils/protoDecode');
 
 const {
     hexToString
@@ -517,8 +518,8 @@ function insertTokenInfo(connection, chainInfo) {
         'txid',
         hexToString(tokenContractMethods.Symbol()),
         hexToString(tokenContractMethods.TokenName()),
-        parseInt(tokenContractMethods.TotalSupply(), 16),
-        parseInt(tokenContractMethods.Decimals(), 16)
+        protoDecode.getUint64(tokenContractMethods.TotalSupply()),
+        protoDecode.getUint64(tokenContractMethods.Decimals())
     ];
     console.log('tokenInfo', tokenInfo);
     insertContract(tokenInfo, connection, 'contract_aelf20');
