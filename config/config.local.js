@@ -10,7 +10,10 @@ const aelf = {
     // network: 'http://34.212.171.27:8000/chain'
     // network: 'http://192.168.199.210:5000/chain'
     // network: 'http://192.168.199.109:5000/chain'
-    network: 'http://192.168.197.56:8000/chain'
+    // network: 'http://192.168.197.56:8000/chain'
+    // network: 'http://192.168.197.70:8000/chain'
+    // network: 'http://192.168.197.56:8101/chain'
+    network: 'http://192.168.197.70:8000/chain'
 };
 
 const mysql = {
@@ -65,17 +68,23 @@ const dbTable = {
     unConfirmedTables: ['blocks', 'transactions', 'resource']
 };
 
+const defaultContracts = {
+    token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
+    resource: '2Xg2HKh8vusnFMQsHCXW1q3vys5JxG5ZnjiGwNDLrrpb9Mb'
+};
+
 module.exports = {
     mysql: mysql,
     dbTable,
     scanTimeInterval: 4000,
-    scanLimit: 90,
+    scanLimit: 50,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
     // removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     criticalBlocksCounts: 60, // 假定的不可回滚块高度。
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
-    initTPSAcquisition: false,
+    initTPSAcquisition: true,
     log4js: log4js,
-    aelf: aelf
+    aelf: aelf,
+    defaultContracts
 };

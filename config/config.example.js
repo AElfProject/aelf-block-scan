@@ -47,6 +47,11 @@ const dbTable = {
     unConfirmedTables: ['blocks', 'transactions', 'resource']
 };
 
+const defaultContracts = {
+    token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
+    resource: '2Xg2HKh8vusnFMQsHCXW1q3vys5JxG5ZnjiGwNDLrrpb9Mb'
+};
+
 module.exports = {
     mysql: mysql,
     dbTable,
@@ -58,6 +63,6 @@ module.exports = {
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: false,
     log4js: log4js,
-    aelf: aelf
+    aelf: aelf,
+    defaultContracts
 };
-

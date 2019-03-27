@@ -50,7 +50,8 @@ const {
     restartTimeInterval,
     restartScanMissingListLimit,
     removeUnconfirmedDataInterval,
-    criticalBlocksCounts
+    criticalBlocksCounts,
+    defaultContracts
 } = config;
 
 const {
@@ -58,8 +59,10 @@ const {
 } = config.aelf;
 
 let contractAddressList = {
-    token: null,
-    resource: null
+    // token: null,
+    // resource: null
+    token: defaultContracts.token,
+    resource: defaultContracts.resource
 };
 
 const {
@@ -87,17 +90,41 @@ try {
 }
 
 function init() {
-    aelf.chain.connectChain((err, chainInfo) => {
+    aelf.chain.getChainInformation((err, chainInfo) => {
         if (err) {
-            logger.error('aelf.chain.connectChain err: ', err);
+            logger.error('aelf.chain.getChainInformation err: ', err);
         }
-
-        console.log('connnect chain: ', err, chainInfo);
+        console.log('getChainInformation: ', err, chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
-        contractAddressList.token = insertTokenInfo(aelfPool, chainInfo); // return tokenContractAddress
-        contractAddressList.resource = chainInfo['AElf.Contracts.Resource'];
+        try {
+            const tokenInfo = insertTokenInfo(chainInfo); // return tokenInfo
+            insertContract(tokenInfo, aelfPool, 'contract_aelf20');
+        } catch (err) {
+            logger.error(`Err: ${err}`);
+            console.log('insertTokenInfo/insertContract: ', err);
+        }
+        // contractAddressList.token = chainInfo['AElf.Contracts.MultiToken'];
+        // contractAddressList.resource = chainInfo['AElf.Contracts.Resource'];
         startScan(aelfPool, scanLimit);
     });
+
+    // aelf.chain.connectChain((err, chainInfo) => {
+    //     if (err) {
+    //         logger.error('aelf.chain.connectChain err: ', err);
+    //     }
+    //     console.log('connnect chain: ', err, chainInfo);
+    //     const aelfPool = mysql.createPool(config.mysql.aelf0);
+    //     try {
+    //         const tokenInfo = insertTokenInfo(chainInfo); // return tokenInfo
+    //         insertContract(tokenInfo, aelfPool, 'contract_aelf20');
+    //     } catch(err) {
+    //         logger.error(`Err: ${err}`);
+    //         console.log('insertTokenInfo/insertContract: ', err);
+    //     }
+    //     contractAddressList.token = chainInfo['AElf.Contracts.MultiToken'];
+    //     contractAddressList.resource = chainInfo['AElf.Contracts.Resource'];
+    //     startScan(aelfPool, scanLimit);
+    // });
 }
 
 let restartTime = 0;
@@ -506,14 +533,18 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
     return transactionPromises;
 }
 
-function insertTokenInfo(connection, chainInfo) {
+// TODO: 链上token合约改成了multiToken合约，Symbol等方法已经remove
+// 后续这个结构改成，一个token一张表。
+function insertTokenInfo(chainInfo) {
     var wallet = Aelf.wallet.getWalletByPrivateKey(commonPrivateKey);
-    const tokenContractAddress = chainInfo['AElf.Contracts.Token'];
+    // const tokenContractAddress = chainInfo['AElf.Contracts.MultiToken'];
+    const tokenContractAddress = contractAddressList.token;
     const chainID = chainInfo.ChainId;
     // 这里是同步请求
     const tokenContractMethods = aelf.chain.contractAt(tokenContractAddress, wallet);
     const tokenInfo = [
-        tokenContractAddress, chainID,
+        tokenContractAddress,
+        chainID,
         'block_hash',
         'txid',
         hexToString(tokenContractMethods.Symbol()),
@@ -522,6 +553,7 @@ function insertTokenInfo(connection, chainInfo) {
         protoDecode.getUint64(tokenContractMethods.Decimals())
     ];
     console.log('tokenInfo', tokenInfo);
-    insertContract(tokenInfo, connection, 'contract_aelf20');
-    return tokenContractAddress;
+    return tokenInfo;
+    // insertContract(tokenInfo, connection, 'contract_aelf20');
+    // return tokenContractAddress;
 }
