@@ -319,7 +319,7 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
             reject(err);
         };
 
-        // aelf.chain.getBlockInfo(1545, true, async (err, result) => {
+        // aelf.chain.getBlockInfo(7990, true, async (err, result) => {
         aelf.chain.getBlockInfo(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
