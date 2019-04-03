@@ -70,7 +70,8 @@ const dbTable = {
 
 const defaultContracts = {
     token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
-    resource: '2Xg2HKh8vusnFMQsHCXW1q3vys5JxG5ZnjiGwNDLrrpb9Mb'
+    // 即 tokenConverter
+    resource: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6'
 };
 
 module.exports = {

@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+package aelf;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.ServiceOptions {
+    optional string csharp_state = 238149;
+}
+
+extend google.protobuf.MethodOptions {
+    optional bool is_view = 342891;
+}
+
+extend google.protobuf.MessageOptions {
+    optional bool is_event = 839427;
+}
+
+extend google.protobuf.FieldOptions {
+    optional bool is_indexed = 543129;
+}

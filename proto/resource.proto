@@ -1,11 +1,16 @@
 syntax = "proto3";
 
-message ResourceBought {
-    uint64 PaidElf = 1;
-    uint64 ReceivedResource = 2;
+option csharp_namespace = "AElf.Kernel";
+
+enum ResourceType
+{
+    UndefinedResourceType = 0;
+    Ram = 1;
+    Cpu = 2;
+    Net = 3;
 }
 
-message ResourceSold {
-    uint64 PaidResource = 1;
-    uint64 ReceivedElf = 2;
+message ResourceTypeBalancePair{
+    ResourceType Type = 1;
+    uint64 Amount = 2;
 }

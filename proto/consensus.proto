@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option csharp_namespace = "AElf.Kernel";
+
+message ConsensusCommand {
+    int32 CountingMilliseconds = 1;// How many milliseconds left to trigger the mining of next block.
+    int32 TimeoutMilliseconds = 2;// Time limit of mining next block.
+    bytes Hint = 3;// Context of Hint is diverse according to the consensus protocol we choose, so we use bytes.
+}
+
+message ValidationResult {
+    bool Success = 1;
+    string Message = 2;
+}
