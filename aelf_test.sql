@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 12/03/2019 18:43:18
+ Date: 03/04/2019 21:24:52
 */
 
 SET NAMES utf8mb4;
@@ -73,7 +73,7 @@ CREATE TABLE `contract_aelf20` (
   `name` varchar(64) NOT NULL,
   `total_supply` bigint(64) unsigned NOT NULL,
   `decimals` int(32) DEFAULT NULL,
-  PRIMARY KEY (`contract_address`)
+  PRIMARY KEY (`symbol`,`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
