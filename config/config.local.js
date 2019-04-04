@@ -5,9 +5,11 @@
 const aelf = {
     commonPrivateKey: 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71',
     // the rpc URL of the AElf Chain Node.
-    // network: 'http://172.31.5.155:8000/chain',
-    network: 'http://localhost:1234/chain',
-    contract: '0xfe9f895a9f425c4ec3dc5c54bfce9908f03b'
+    // network: 'http://localhost:1234/chain'
+    // network: 'http://34.212.171.27:8000/chain'
+    // network: 'http://34.212.171.27:8000/chain'
+    // network: 'http://192.168.199.210:5000/chain'
+    network: 'http://192.168.199.109:5000/chain'
 };
 
 const mysql = {
@@ -18,13 +20,20 @@ const mysql = {
         // 端口号
         port: '3306',
         // 用户名
-        user: 'normal_aelf',
+        // user: 'normal_aelf',
+        // user: 'normal_aelf_mh',
+        user: 'root',
         // user: 'root',
         // 密码
         // password: '',
-        password: 'password',
+        // password: 'password',
+        password: '',
         // 数据库名
-        database: 'aelf_test',
+        // database: 'aelf_test',
+        // database: 'aelf_test_01',
+        // database: 'aelf_test_34_212_171_27',
+        // database: 'aelf_test_minghui',
+        database: 'aelf_test_rollback',
         // database: 'aelf_test_01',
         // database: 'aelf_test_34_212_171_27',
         // database: 'aelf_test_172_31_5_155_8000',
@@ -48,13 +57,26 @@ const log4js = {
     }
 };
 
+const dbTable = {
+    confirmedSuffix: '_0',
+    unconfirmedSuffix: '_unconfirmed',
+    unConfirmedTables: ['blocks', 'transactions', 'resource']
+};
+
 module.exports = {
     mysql: mysql,
+    dbTable,
     scanTimeInterval: 4000,
-    scanLimit: 100,
+    scanLimit: 10,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
+    // removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
+    criticalBlocksCounts: 60, // 假定的不可回滚块高度。
+    removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
+    initTPSAcquisition: false,
     // scanLimit: 12,
+    // if !!resourceContractAddress === false, we will not acquisite resource.
+    resourceContractAddress: 'ELF_4CBbRKd6rkCzTX5aJ2mnGrwJiHLmGdJZinoaVfMvScTEoBR',
     log4js: log4js,
     aelf: aelf
 };

@@ -55,6 +55,12 @@ async function init(pool) {
     );
 
     const startTimeUnix01 = firstBlockInBlockTable[0] && moment(firstBlockInBlockTable[0].time).unix() || 0;
+    if (!startTimeUnix01) {
+        const errorMsg = 'can not find the first block in Database!';
+        console.error(errorMsg);
+        throw Error(errorMsg);
+    }
+
     const startTimeUnix02 = latestBlockInTPSTable.length ? moment(latestBlockInTPSTable[0].end).unix() : 0;
     const startTimeUnix = Math.max(startTimeUnix01, startTimeUnix02);
 
