@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 100309
  Source Host           : localhost:3306
- Source Schema         : aelf_test_minghui
+ Source Schema         : aelf_test_newchain
 
  Target Server Type    : MySQL
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 13/02/2019 10:55:00
+ Date: 03/04/2019 21:24:52
 */
 
 SET NAMES utf8mb4;
@@ -73,7 +73,7 @@ CREATE TABLE `contract_aelf20` (
   `name` varchar(64) NOT NULL,
   `total_supply` bigint(64) unsigned NOT NULL,
   `decimals` int(32) DEFAULT NULL,
-  PRIMARY KEY (`contract_address`)
+  PRIMARY KEY (`symbol`,`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -161,7 +161,6 @@ CREATE TABLE `transactions_0` (
   `params` text NOT NULL,
   `method` varchar(64) NOT NULL,
   `block_hash` varchar(64) NOT NULL,
-  `increment_id` int(32) unsigned NOT NULL,
   `quantity` bigint(64) unsigned NOT NULL,
   `tx_status` varchar(64) NOT NULL,
   `time` varchar(64) NOT NULL COMMENT 'time of blocks',
@@ -182,7 +181,6 @@ CREATE TABLE `transactions_unconfirmed` (
   `params` text NOT NULL,
   `method` varchar(64) NOT NULL,
   `block_hash` varchar(64) NOT NULL,
-  `increment_id` int(32) unsigned NOT NULL,
   `quantity` bigint(64) unsigned NOT NULL,
   `tx_status` varchar(64) NOT NULL,
   `time` varchar(64) NOT NULL COMMENT 'time of blocks',

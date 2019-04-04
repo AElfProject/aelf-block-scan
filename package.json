@@ -9,7 +9,7 @@
   "author": "huangzongzhe",
   "license": "ISC",
   "dependencies": {
-    "aelf-sdk": "^1.1.13",
+    "aelf-sdk": "^2.1.9",
     "ali-rds": "^3.0.1",
     "google-protobuf": "^3.7.0-rc.2",
     "log4js": "^3.0.5",

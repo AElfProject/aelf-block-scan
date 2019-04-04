@@ -150,7 +150,7 @@ mysql> show full processlist;
 
 ### 5.Can not pull the newest code when use build.sh.
 
-May you need change the build.sh. Please see the implement of build.sh.
+May you need change the build.sh. Please see the implemention of build.sh.
 
 ## procfile pandora [TODO]
 

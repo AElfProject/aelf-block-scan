@@ -2,7 +2,7 @@
  * @file removeRedundantData.js
  * @author huangzongzhe
  * @description
- * 
+ *
  * 1.当前
  * 一个比较low的操作。
  * 删除时，暂停scan程序的循环事件，执行删除命令。

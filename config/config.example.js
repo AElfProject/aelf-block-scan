@@ -47,8 +47,14 @@ const dbTable = {
     unConfirmedTables: ['blocks', 'transactions', 'resource']
 };
 
+const defaultContracts = {
+    token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
+    resource: '2Xg2HKh8vusnFMQsHCXW1q3vys5JxG5ZnjiGwNDLrrpb9Mb'
+};
+
 module.exports = {
     mysql: mysql,
+    dbTable,
     scanTimeInterval: 4000,
     scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
@@ -56,10 +62,7 @@ module.exports = {
     criticalBlocksCounts: 60,
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: false,
-    // if !!resourceContractAddress === false, we will not acquisite resource.
-    resourceContractAddress: 'ELF_47dpXA3aEuDj9yeq9Et2E4zjPrSs4uQpzdFkYuBZEEQmob',
-    // scanLimit: 12,
     log4js: log4js,
-    aelf: aelf
+    aelf: aelf,
+    defaultContracts
 };
-
