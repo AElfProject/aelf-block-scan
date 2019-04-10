@@ -80,6 +80,7 @@ const scanTimer = new ScanTimer({
     callback: subscribe,
     interval: scanTimeInterval
 });
+let chainId = '';
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
@@ -94,37 +95,11 @@ function init() {
         if (err) {
             logger.error('aelf.chain.getChainInformation err: ', err);
         }
+        chainId = chainInfo.ChainId;
         console.log('getChainInformation: ', err, chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
-        try {
-            const tokenInfo = insertTokenInfo(chainInfo); // return tokenInfo
-            insertContract(tokenInfo, aelfPool, 'contract_aelf20');
-        } catch (err) {
-            logger.error(`Err: ${err}`);
-            console.log('insertTokenInfo/insertContract: ', err);
-        }
-        // contractAddressList.token = chainInfo['AElf.Contracts.MultiToken'];
-        // contractAddressList.resource = chainInfo['AElf.Contracts.Resource'];
         startScan(aelfPool, scanLimit);
     });
-
-    // aelf.chain.connectChain((err, chainInfo) => {
-    //     if (err) {
-    //         logger.error('aelf.chain.connectChain err: ', err);
-    //     }
-    //     console.log('connnect chain: ', err, chainInfo);
-    //     const aelfPool = mysql.createPool(config.mysql.aelf0);
-    //     try {
-    //         const tokenInfo = insertTokenInfo(chainInfo); // return tokenInfo
-    //         insertContract(tokenInfo, aelfPool, 'contract_aelf20');
-    //     } catch(err) {
-    //         logger.error(`Err: ${err}`);
-    //         console.log('insertTokenInfo/insertContract: ', err);
-    //     }
-    //     contractAddressList.token = chainInfo['AElf.Contracts.MultiToken'];
-    //     contractAddressList.resource = chainInfo['AElf.Contracts.Resource'];
-    //     startScan(aelfPool, scanLimit);
-    // });
 }
 
 let restartTime = 0;
@@ -217,21 +192,22 @@ async function subscribe(pool, scanLimit) {
     console.log('blockHeightInDataBaseUnconfirmed: ', blockHeightInDataBaseUnconfirmed);
     console.log('blockHeightInChain: ', blockHeightInChain);
 
-    if (blockHeightInDataBase >= blockHeightInChain - criticalBlocksCounts) {
+    if (blockHeightInDataBase >= criticalHeight) {
         scanTimer.startTimer(pool, scanLimit);
-        startTpsAcquisition();
         blockUnconfirmed.removeRedundantData(pool, Math.min(criticalHeight - 100, blockHeightInDataBaseUnconfirmed - criticalBlocksCounts), scanTimer);
+        startTpsAcquisition();
         return;
     }
 
-    let maxBlockHeight = Math.min(blockHeightInDataBase + scanLimit, blockHeightInChain - criticalBlocksCounts);
+    let maxBlockHeight = Math.min(blockHeightInDataBase + scanLimit, criticalHeight);
 
     const scanBlocksPromises = [];
     for (let i = blockHeightInDataBase + 1; i <= maxBlockHeight; i++) {
         scanBlocksPromises.push(scanABlockPromise(i, pool));
         // scanBlocksPromises.push(scanABlockPromise(4271, pool));
     }
-
+    
+    // TODO: unconfirmed 就应该搞一个独立的进程来跑。
     const scanBlocksPromisesUnconfirmed = [];
     if (blockHeightInDataBase + 1 >= criticalHeight) {
         blockHeightInDataBaseUnconfirmed = Math.max(criticalHeight, blockHeightInDataBaseUnconfirmed);
@@ -319,7 +295,7 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
             reject(err);
         };
 
-        // aelf.chain.getBlockInfo(2222, true, async (err, result) => {
+        // aelf.chain.getBlockInfo(169, true, async (err, result) => {
         aelf.chain.getBlockInfo(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
@@ -358,7 +334,14 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
                         scanTime += (new Date().getTime()) - startTime;
 
                         insertOptions.transactionsDetail = txsList.map(item => {
-                            return transactionFormat(item, blockInfoFormatted, contractAddressList)
+
+                            const txFormatted = transactionFormat(item, blockInfoFormatted, contractAddressList);
+                            if (item.Transaction && item.Transaction.To === contractAddressList.token
+                                && item.Transaction.MethodName === 'Create') {
+                                    insertTokenInfo(txFormatted, pool);
+                            }
+
+                            return txFormatted;
                         });
 
                         insertOptions.isUnconfirmed = isUnconfirmed;
@@ -533,27 +516,19 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
     return transactionPromises;
 }
 
-// TODO: 链上token合约改成了multiToken合约，Symbol等方法已经remove
-// 后续这个结构改成，一个token一张表。
-function insertTokenInfo(chainInfo) {
-    var wallet = Aelf.wallet.getWalletByPrivateKey(commonPrivateKey);
-    // const tokenContractAddress = chainInfo['AElf.Contracts.MultiToken'];
-    const tokenContractAddress = contractAddressList.token;
-    const chainID = chainInfo.ChainId;
-    // 这里是同步请求
-    const tokenContractMethods = aelf.chain.contractAt(tokenContractAddress, wallet);
-    const tokenInfo = [
-        tokenContractAddress,
-        chainID,
-        'block_hash',
-        'txid',
-        hexToString(tokenContractMethods.Symbol()),
-        hexToString(tokenContractMethods.TokenName()),
-        protoDecode.getUint64(tokenContractMethods.TotalSupply()),
-        protoDecode.getUint64(tokenContractMethods.Decimals())
+// TODO: 后续这个结构改成，一个token一张表?
+function insertTokenInfo(tokenInfo, connection) {
+    const params = JSON.parse(tokenInfo.params);
+    const input = [
+        tokenInfo.address_to,
+        chainId,
+        tokenInfo.block_hash,
+        tokenInfo.tx_id,
+        params.symbol,
+        params.tokenName,
+        params.totalSupplyStr,
+        params.decimals
     ];
     console.log('tokenInfo', tokenInfo);
-    return tokenInfo;
-    // insertContract(tokenInfo, connection, 'contract_aelf20');
-    // return tokenContractAddress;
+    insertContract(input, connection, 'contract_aelf20');
 }

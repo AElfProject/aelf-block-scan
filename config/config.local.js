@@ -71,11 +71,12 @@ const dbTable = {
 const defaultContracts = {
     token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
     // 即 tokenConverter
-    resource: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6'
+    resource: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6',
+    tokenConverter: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6'
 };
 
 module.exports = {
-    mysql: mysql,
+    mysql,
     dbTable,
     scanTimeInterval: 4000,
     scanLimit: 50,
@@ -85,7 +86,7 @@ module.exports = {
     criticalBlocksCounts: 60, // 假定的不可回滚块高度。
     removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
     initTPSAcquisition: true,
-    log4js: log4js,
-    aelf: aelf,
+    log4js,
+    aelf,
     defaultContracts
 };
