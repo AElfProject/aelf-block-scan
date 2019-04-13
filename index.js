@@ -9,7 +9,7 @@
 // 2. let blockList = await connection.query('select block_height from blocks_0', []); 需要优化，当区块数到百万千万级别时，如何分页处理。
 // 3. logger.error 的同时，执行console.log
 
-const Aelf = require('aelf-sdk');
+const AElf = require('aelf-sdk');
 const log4js = require('log4js');
 
 const {
@@ -51,7 +51,7 @@ const header = [{
     value: 'text/plain;v=1.0'
 }];
 
-let aelf = new Aelf(new Aelf.providers.HttpProvider(
+let aelf = new AElf(new AElf.providers.HttpProvider(
     config.aelf.network,
     timeout,
     user,
