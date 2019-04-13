@@ -5,6 +5,8 @@
 const process = require('child_process');
 const startCmdList = require('../config/configInit').getTpsStartCommandList();
 const stopCmdList = require('../config/configInit').getTpsStopCommandList();
+// const restartCmdList = require('../config/configInit').getTpsRestartCommandList();
+const {initTPSAcquisition} = require('../config/configInit').config;
 
 function executeCommand(commandList) {
     commandList.map(cli => {
@@ -20,6 +22,9 @@ function executeCommand(commandList) {
 }
 
 function startTpsAcquisition() {
+    if (!initTPSAcquisition) {
+        return;
+    }
     process.exec('pm2 show aelf-block-scan-tps', {encoding: 'utf8'}, err => {
         if (err) {
             executeCommand(startCmdList);
@@ -27,6 +32,9 @@ function startTpsAcquisition() {
     });
 }
 function stopTpsAcquisition() {
+    if (!initTPSAcquisition) {
+        return;
+    }
     executeCommand(stopCmdList);
 }
 

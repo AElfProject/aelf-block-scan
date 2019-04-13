@@ -5,9 +5,7 @@
 const aelf = {
     commonPrivateKey: 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71',
     // the rpc URL of the AElf Chain Node.
-    // network: 'http://172.31.5.155:8000/chain',
-    network: 'http://localhost:1234/chain',
-    contract: '0xfe9f895a9f425c4ec3dc5c54bfce9908f03b'
+    network: 'http://localhost:1234/chain'
 };
 
 const mysql = {
@@ -43,13 +41,28 @@ const log4js = {
     }
 };
 
+const dbTable = {
+    confirmedSuffix: '_0',
+    unconfirmedSuffix: '_unconfirmed',
+    unConfirmedTables: ['blocks', 'transactions', 'resource']
+};
+
+const defaultContracts = {
+    token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
+    resource: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6'
+};
+
 module.exports = {
     mysql: mysql,
+    dbTable,
     scanTimeInterval: 4000,
     scanLimit: 20,
     restartTimeInterval: 60000, // 1000 * 60 * 1
     restartScanMissingListLimit: 3,
-    // scanLimit: 12,
+    criticalBlocksCounts: 60,
+    removeUnconfirmedDataInterval: 240000, // 1000 * 60 * 4
+    initTPSAcquisition: false,
     log4js: log4js,
-    aelf: aelf
+    aelf: aelf,
+    defaultContracts
 };

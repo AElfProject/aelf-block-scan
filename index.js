@@ -18,11 +18,24 @@ const {
 } = require('./tps/initTpsAcquisition');
 
 const {blockInfoFormat, transactionFormat} = require('./lib/format.js');
-const {insertTransactions, insertBlock} = require('./lib/insertPure.js');
+const {
+    insertTransactions,
+    insertResourceTransactions,
+    insertBlock,
+    insertContract
+} = require('./lib/insertPure.js');
 const missingList = require('./lib/missingList');
 const {queryPromise} = require('./lib/mysql/queryPromise');
 const {getConnectionPromise} = require('./lib/mysql/getConnectionPromise');
 const {beginTransaction} = require('./lib/mysql/beginTransaction');
+const protoDecode = require('./utils/protoDecode');
+
+const {
+    hexToString
+} = require('./utils/utils');
+
+const ScanTimer = require('./utils/ScanTimer'); 
+const BlockUnconfirmed = require('./unconfirmed/removeRedundantData');
 
 const mysql = require('mysql');
 
@@ -31,22 +44,61 @@ log4js.configure(config.log4js);
 const logger = log4js.getLogger('scan');
 
 let aelf = new Aelf(new Aelf.providers.HttpProvider(config.aelf.network));
-const {scanLimit, scanTimeInterval, restartTimeInterval, restartScanMissingListLimit} = config;
+const {
+    scanLimit,
+    scanTimeInterval,
+    restartTimeInterval,
+    restartScanMissingListLimit,
+    removeUnconfirmedDataInterval,
+    criticalBlocksCounts,
+    defaultContracts
+} = config;
 
+const {
+    commonPrivateKey
+} = config.aelf;
+
+let contractAddressList = {
+    // token: null,
+    // resource: null
+    token: defaultContracts.token,
+    resource: defaultContracts.resource
+};
+
+const {
+    confirmedSuffix,
+    unconfirmedSuffix,
+    unConfirmedTables
+} = config.dbTable;
+console.log('-----dbConfirmedSuffix ', config.dbTable, confirmedSuffix, unconfirmedSuffix);
+
+const blockUnconfirmed = new BlockUnconfirmed({
+    removeUnconfirmedDataInterval,
+    unConfirmedTables
+});
+const scanTimer = new ScanTimer({
+    callback: subscribe,
+    interval: scanTimeInterval
+});
+let chainId = '';
 // This and use pm2.
 // http://nodejs.cn/api/process.html#process_event_uncaughtexception
 // 官方并不建议当做 On Error Resume Next的机制。
-init();
+try {
+    init();
+} catch(err) {
+    console.log('init error: ', err);
+}
 
 function init() {
-    aelf.chain.connectChain(err => {
+    aelf.chain.getChainInformation((err, chainInfo) => {
         if (err) {
-            logger.error('aelf.chain.connectChain err: ', err);
+            logger.error('aelf.chain.getChainInformation err: ', err);
         }
-
+        chainId = chainInfo.ChainId;
+        console.log('getChainInformation: ', err, chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
         startScan(aelfPool, scanLimit);
-
     });
 }
 
@@ -57,6 +109,7 @@ process.on('uncaughtException', (err) => {
     if (!err.toString().match('Invalid JSON RPC response')) {
         return;
     }
+
     // Error: Invalid JSON RPC response: undefined
     restart(err);
 });
@@ -105,47 +158,67 @@ async function startScan(pool, scanLimit) {
     });
 }
 
-function scanTimerInit(pool, scanLimit) {
-    setTimeout(() => {
-        subscribe(pool, scanLimit);
-    }, scanTimeInterval);
-}
-
 // subscribe 是真正定时任务执行时被运行的函数
+// 1.插入到unconfirmed库。
+// 2.落后N个块的数据，插入到confirmed库。
 async function subscribe(pool, scanLimit) {
+    let blockHeightInDataBase = 0;
+    let blockHeightInDataBaseUnconfirmed = 0;
+    let blockHeightInChain;
+    let criticalHeight;
 
     let lastestBlockInDatabase = await queryPromise(pool, 'select block_height from blocks_0 ORDER BY block_height DESC limit 1');
-    let blockHeightInDataBase = 1;
+    let lastestBlockInDatabaseUnconfirmed
+        = await queryPromise(pool, 'select block_height from blocks_unconfirmed ORDER BY block_height DESC limit 1');
+
     if (lastestBlockInDatabase && lastestBlockInDatabase[0] && lastestBlockInDatabase[0].block_height) {
         blockHeightInDataBase = parseInt(lastestBlockInDatabase[0].block_height, 10);
     }
+    if (lastestBlockInDatabaseUnconfirmed && lastestBlockInDatabaseUnconfirmed[0] && lastestBlockInDatabaseUnconfirmed[0].block_height) {
+        blockHeightInDataBaseUnconfirmed = parseInt(lastestBlockInDatabaseUnconfirmed[0].block_height, 10);
+    }
 
-    let blockHeightInChain;
     try {
-        blockHeightInChain = parseInt(aelf.chain.getBlockHeight().result.block_height, 10);
-    } catch(err) {
+        blockHeightInChain = parseInt(aelf.chain.getBlockHeight(), 10);
+    }
+    catch (err) {
         restart(err, 'subscribe -> getBlockHeight()');
         return;
     }
 
+    criticalHeight = blockHeightInChain - criticalBlocksCounts;
+
     console.log('blockHeightInDataBase: ', blockHeightInDataBase);
+    console.log('blockHeightInDataBaseUnconfirmed: ', blockHeightInDataBaseUnconfirmed);
     console.log('blockHeightInChain: ', blockHeightInChain);
 
-    if (blockHeightInDataBase >= blockHeightInChain) {
-        scanTimerInit(pool, scanLimit);
+    if (blockHeightInDataBase >= criticalHeight) {
+        scanTimer.startTimer(pool, scanLimit);
+        blockUnconfirmed.removeRedundantData(pool, Math.min(criticalHeight - 100, blockHeightInDataBaseUnconfirmed - criticalBlocksCounts), scanTimer);
         startTpsAcquisition();
         return;
     }
 
-    let maxBlockHeight = Math.min(blockHeightInDataBase + scanLimit, blockHeightInChain);
+    let maxBlockHeight = Math.min(blockHeightInDataBase + scanLimit, criticalHeight);
+
     const scanBlocksPromises = [];
     for (let i = blockHeightInDataBase + 1; i <= maxBlockHeight; i++) {
         scanBlocksPromises.push(scanABlockPromise(i, pool));
+        // scanBlocksPromises.push(scanABlockPromise(4271, pool));
+    }
+    
+    // TODO: unconfirmed 就应该搞一个独立的进程来跑。
+    const scanBlocksPromisesUnconfirmed = [];
+    if (blockHeightInDataBase + 1 >= criticalHeight) {
+        blockHeightInDataBaseUnconfirmed = Math.max(criticalHeight, blockHeightInDataBaseUnconfirmed);
+        
+        for (let i = blockHeightInDataBaseUnconfirmed + 1; i <= blockHeightInChain; i++) {
+            scanBlocksPromisesUnconfirmed.push(scanAUnconfirmedBlockPromise(i, pool));
+        }
     }
 
     let startTime = new Date().getTime();
-    Promise.all(scanBlocksPromises).then(() => {
-    // Promise.all(promises).then(result => {
+    Promise.all([...scanBlocksPromises, ...scanBlocksPromisesUnconfirmed]).then(() => {
         subscribe(pool, scanLimit);
         console.log('endTime: ', new Date().getTime() - startTime, 'scanTime: ', scanTime, ' time now:', new Date());
         scanTime = 0;
@@ -164,6 +237,7 @@ function scanMissingList(missingList, pool, resolve, reject, restartCount = 0) {
         reject('');
         return;
     }
+
     if (length === 0) {
         resolve();
         return;
@@ -177,7 +251,6 @@ function scanMissingList(missingList, pool, resolve, reject, restartCount = 0) {
     });
 
     Promise.all(scanMissingBlocksPromises).then(() => {
-        console.log(1111);
         restartCount = 0;
         scanMissingList({
             list: listTodo,
@@ -202,7 +275,7 @@ function scanMissingList(missingList, pool, resolve, reject, restartCount = 0) {
  *
  * @return {Object} Promise
  */
-function scanABlockPromise(listIndex, pool) {
+function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
     return new Promise((resolve, reject) => {
         let startTime = new Date().getTime();
 
@@ -222,6 +295,7 @@ function scanABlockPromise(listIndex, pool) {
             reject(err);
         };
 
+        // aelf.chain.getBlockInfo(169, true, async (err, result) => {
         aelf.chain.getBlockInfo(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
@@ -234,9 +308,9 @@ function scanABlockPromise(listIndex, pool) {
             }
 
             try {
-                let blockInfo = result.result;
+                let blockInfo = result;
                 let transactions = blockInfo.Body.Transactions;
-                let blockInfoFormatted  = blockInfoFormat(blockInfo);
+                let blockInfoFormatted = blockInfoFormat(blockInfo);
                 let txLength = transactions.length;
 
                 let insertOptions = {
@@ -249,7 +323,7 @@ function scanABlockPromise(listIndex, pool) {
                 };
 
                 // console.log('block_hash: ', blockInfoFormatted.block_hash, ' || ', listIndex, txLength);
-
+                // console.log(listIndex, blockInfo);
                 if (txLength) {
                     let transactionPromises = getTransactionPromises(result);
 
@@ -259,7 +333,18 @@ function scanABlockPromise(listIndex, pool) {
 
                         scanTime += (new Date().getTime()) - startTime;
 
-                        insertOptions.transactionsDetail = txsList.map(item => transactionFormat(item, blockInfoFormatted));
+                        insertOptions.transactionsDetail = txsList.map(item => {
+
+                            const txFormatted = transactionFormat(item, blockInfoFormatted, contractAddressList);
+                            if (item.Transaction && item.Transaction.To === contractAddressList.token
+                                && item.Transaction.MethodName === 'Create') {
+                                    insertTokenInfo(txFormatted, pool);
+                            }
+
+                            return txFormatted;
+                        });
+
+                        insertOptions.isUnconfirmed = isUnconfirmed;
 
                         insertBlockAndTxs(insertOptions);
 
@@ -282,36 +367,58 @@ function scanABlockPromise(listIndex, pool) {
                     errType: 'Try Catch, Catch',
                     err: err
                 });
-                console.log('[error]rollback: ', listIndex, error);
+                console.log('[error]rollback: ', listIndex, err);
             }
         });
     });
-};
+}
+
+function scanAUnconfirmedBlockPromise(listIndex, pool) {
+    return scanABlockPromise(listIndex, pool, true);
+}
 
 async function insertBlockAndTxs(option) {
-    const {pool, transactionsDetail, blockInfoFormatted, successCallback, failedCallback, listIndex, txLength} = option;
+    const {
+        pool,
+        transactionsDetail,
+        blockInfoFormatted,
+        successCallback,
+        failedCallback,
+        listIndex,
+        txLength,
+        isUnconfirmed
+    } = option;
 
+    const suffix = isUnconfirmed ? unconfirmedSuffix : confirmedSuffix;
     let connection = await getConnectionPromise(pool);
 
     beginTransaction(connection);
 
-    let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
-    let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
+    // let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions_0');
+    // let insertResourceTranPromise
+    //     = insertResourceTransactions(transactionsDetail, connection, 'resource_0', contractAddressList);
+    // let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks_0');
+    let insertTranPromise = insertTransactions(transactionsDetail, connection, 'transactions' + suffix);
+    let insertResourceTranPromise
+        = insertResourceTransactions(transactionsDetail, connection, 'resource' + suffix, contractAddressList);
+    let insertBlockPromise = insertBlock(blockInfoFormatted, connection, 'blocks' + suffix);
 
-    Promise.all([insertTranPromise, insertBlockPromise]).then(result => {
+    // Promise.all([insertTranPromise, insertBlockPromise]).then(result => {
+    Promise.all([insertTranPromise, insertResourceTranPromise, insertBlockPromise]).then(result => {
         connection.commit(err => {
             if (err) {
                 console.log('connection.commit rollback!');
-                connection.rollback(function() {
+                connection.rollback(function () {
                     connection.release();
                     failedCallback({
                         errType: `Block Height: ${listIndex}`
-                        + '[insertTranPromise, insertBlockPromise]Promise.all then rollback',
+                            + '[insertTranPromise, insertBlockPromise]Promise.all then rollback',
                         err: err,
                         result: result
                     });
                 });
-            } else {
+            }
+            else {
                 console.log('block_hash: ', blockInfoFormatted.block_hash, ' || ', listIndex, txLength);
                 connection.release();
                 successCallback('', result);
@@ -320,7 +427,7 @@ async function insertBlockAndTxs(option) {
 
     }).catch(err => {
         console.log('connection.commit rollback! catch');
-        connection.rollback(function() {
+        connection.rollback(function () {
             connection.release();
             failedCallback({
                 errType: `Block Height: ${listIndex} [insertTranPromise, insertBlockPromise]Promise.all catch rollback`,
@@ -331,7 +438,13 @@ async function insertBlockAndTxs(option) {
 }
 
 async function insertOnlyBlock(option) {
-    const {pool, blockInfoFormatted, successCallback, failedCallback, listIndex} = option;
+    const {
+        pool,
+        blockInfoFormatted,
+        successCallback,
+        failedCallback,
+        listIndex
+    } = option;
     let connection = await getConnectionPromise(pool);
     insertBlock(blockInfoFormatted, connection, 'blocks_0').then(result => {
         connection.release();
@@ -347,28 +460,53 @@ async function insertOnlyBlock(option) {
 }
 
 function getTransactionPromises(block) {
-    const blockInfo = block.result;
-    const blockHash = blockInfo.Blockhash;
-    const blockHeight = blockInfo.Header.Index;
+    const blockInfo = block;
+    const blockHash = blockInfo.BlockHash;
+    const blockHeight = blockInfo.Header.Height;
     const transactions = blockInfo.Body.Transactions;
     const txLength = transactions.length;
     let transactionPromises = [];
     const PAGELIMIT = 100;
 
+    // transactionPromises = getTxResultPromises(transactions, txLength, blockHeight);
+    transactionPromises = getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight);
+
+    return transactionPromises;
+}
+
+// function getTxResultPromises(transactions, txLength, blockHeight) {
+//     let transactionPromises = [];
+//     for (let i = 0; i < txLength; i++) {
+//         transactionPromises.push(new Promise((resolve, reject) => {
+//             aelf.chain.getTxResult(transactions[i], (error, result) => {
+//                 if (error || !result) {
+//                     console.log('error result getTxResult: ', blockHeight, result, error);
+//                     reject(error);
+//                 }
+//                 else {
+//                     resolve(result.result);
+//                 }
+//             });
+//         }));
+//     }
+//     return transactionPromises;
+// }
+
+function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
+    let transactionPromises = [];
     for (let offset = 0; offset < txLength; offset += PAGELIMIT) {
         transactionPromises.push(new Promise((resolve, reject) => {
-            aelf.chain.getTxsResult(
+            return aelf.chain.getTxsResult(
                 blockHash,
                 offset,
-                PAGELIMIT,
-                function (error, result) {
-                    if (error || !result || !result.result) {
-                        console.log('error result getTxsResult: ', blockHeight, result, error);
-                        logger.error('error result getTxsResult: ', blockHeight, result, error);
+                PAGELIMIT, function (error, result) {
+                    if (error || !result) {
+                        console.log('error result getTxsResult: ', blockHeight, blockHash, result, error);
+                        logger.error('error result getTxsResult: ', blockHeight, blockHash, result, error);
                         reject(error);
                     }
                     else {
-                        const txsList = result.result || [];
+                        const txsList = result || [];
                         resolve(txsList);
                     }
                 }
@@ -376,4 +514,21 @@ function getTransactionPromises(block) {
         }));
     }
     return transactionPromises;
+}
+
+// TODO: 后续这个结构改成，一个token一张表?
+function insertTokenInfo(tokenInfo, connection) {
+    const params = JSON.parse(tokenInfo.params);
+    const input = [
+        tokenInfo.address_to,
+        chainId,
+        tokenInfo.block_hash,
+        tokenInfo.tx_id,
+        params.symbol,
+        params.tokenName,
+        params.totalSupplyStr,
+        params.decimals
+    ];
+    console.log('tokenInfo', tokenInfo);
+    insertContract(input, connection, 'contract_aelf20');
 }

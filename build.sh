@@ -7,7 +7,7 @@ start_mode=${1:-'production'}
 node_modules_action=${2:-'default'}
 echo ${node_modules_action} ${start_mode}
 
-git pull origin master && echo 'git pull'
+git pull && echo 'git pull'
 
 if [ ${node_modules_action} = 'reinstall' ]
 then

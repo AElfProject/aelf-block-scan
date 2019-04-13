@@ -1,0 +1,39 @@
+{
+  "options": {
+    "csharp_namespace": "AElf.Common"
+  },
+  "nested": {
+    "Address": {
+      "fields": {
+        "Value": {
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "Hash": {
+      "fields": {
+        "Value": {
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "SInt32Value": {
+      "fields": {
+        "Value": {
+          "type": "sint32",
+          "id": 1
+        }
+      }
+    },
+    "SInt64Value": {
+      "fields": {
+        "Value": {
+          "type": "sint64",
+          "id": 1
+        }
+      }
+    }
+  }
+}
