@@ -43,20 +43,12 @@ let {config} = require('./config/configInit.js');
 log4js.configure(config.log4js);
 const logger = log4js.getLogger('scan');
 
-const user = null;
-const timeout = null;
-const password = null;
-const header = [{
-    name: 'Accept',
-    value: 'text/plain;v=1.0'
-}];
-
 let aelf = new AElf(new AElf.providers.HttpProvider(
     config.aelf.network,
-    timeout,
-    user,
-    password,
-    header
+    config.aelf.user,
+    config.aelf.password,
+    config.aelf.timeout,
+    config.aelf.header
 ));
 
 const {
