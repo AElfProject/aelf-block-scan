@@ -13,6 +13,7 @@ const aelf = {
     // network: 'http://192.168.197.56:8000/chain'
     // network: 'http://192.168.197.70:8000/chain'
     network: 'http://192.168.197.56:8101/chain'
+    // network: 'http://192.168.197.56:8101/chain'
     // network: 'http://192.168.197.70:8000/chain'
 };
 

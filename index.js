@@ -106,7 +106,7 @@ try {
 }
 
 function init() {
-    aelf.chain.getChainInformation((err, chainInfo) => {
+    aelf.chain.getChainStatus((err, chainInfo) => {
         if (err) {
             logger.error('aelf.chain.getChainInformation err: ', err);
         }
@@ -310,12 +310,12 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
             reject(err);
         };
 
-        // aelf.chain.getBlockInfo(169, true, async (err, result) => {
-        aelf.chain.getBlockInfo(listIndex, true, async (err, result) => {
+        // aelf.chain.getBlockByHeight(879, true, async (err, result) => {
+        aelf.chain.getBlockByHeight(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
                     code: 10000,
-                    errType: 'chainError, getBlockInfo',
+                    errType: 'chainError, getBlockByHeight',
                     err: err,
                     result: result
                 });
@@ -511,7 +511,7 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
     let transactionPromises = [];
     for (let offset = 0; offset < txLength; offset += PAGELIMIT) {
         transactionPromises.push(new Promise((resolve, reject) => {
-            return aelf.chain.getTxsResult(
+            return aelf.chain.getTxResults(
                 blockHash,
                 offset,
                 PAGELIMIT, function (error, result) {

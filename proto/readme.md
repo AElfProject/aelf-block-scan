@@ -2,7 +2,7 @@
 
 https://github.com/protocolbuffers/protobuf/tree/master/js
 
-## How to use 
+## How to use
 
 protoc --js_out=import_style=commonjs,binary:. messages.proto base.proto
 
