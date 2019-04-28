@@ -28,13 +28,9 @@ const missingList = require('./lib/missingList');
 const {queryPromise} = require('./lib/mysql/queryPromise');
 const {getConnectionPromise} = require('./lib/mysql/getConnectionPromise');
 const {beginTransaction} = require('./lib/mysql/beginTransaction');
-const protoDecode = require('./utils/protoDecode');
 
-const {
-    hexToString
-} = require('./utils/utils');
-
-const ScanTimer = require('./utils/ScanTimer'); 
+const ScanTimer = require('./utils/ScanTimer');
+const getContractAddressByName = require('./utils/getContractAddressByName');
 const BlockUnconfirmed = require('./unconfirmed/removeRedundantData');
 
 const mysql = require('mysql');
@@ -43,20 +39,8 @@ let {config} = require('./config/configInit.js');
 log4js.configure(config.log4js);
 const logger = log4js.getLogger('scan');
 
-const user = null;
-const timeout = null;
-const password = null;
-const header = [{
-    name: 'Accept',
-    value: 'text/plain;v=1.0'
-}];
-
 let aelf = new AElf(new AElf.providers.HttpProvider(
-    config.aelf.network,
-    timeout,
-    user,
-    password,
-    header
+    ...config.aelf.network
 ));
 
 const {
@@ -68,10 +52,6 @@ const {
     criticalBlocksCounts,
     defaultContracts
 } = config;
-
-const {
-    commonPrivateKey
-} = config.aelf;
 
 let contractAddressList = {
     // token: null,
@@ -113,6 +93,7 @@ function init() {
         chainId = chainInfo.ChainId;
         console.log('getChainInformation: ', err, chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
+        insertInnerToken(aelfPool);
         startScan(aelfPool, scanLimit);
     });
 }
@@ -310,7 +291,7 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
             reject(err);
         };
 
-        // aelf.chain.getBlockByHeight(879, true, async (err, result) => {
+        // aelf.chain.getBlockByHeight(1217, true, async (err, result) => {
         aelf.chain.getBlockByHeight(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
@@ -533,6 +514,9 @@ function getTxsResultPromises(txLength, blockHash, PAGELIMIT, blockHeight) {
 
 // TODO: 后续这个结构改成，一个token一张表?
 function insertTokenInfo(tokenInfo, connection) {
+    if (tokenInfo.tx_status !== 'Mined') {
+        return;
+    }
     const params = JSON.parse(tokenInfo.params);
     const input = [
         tokenInfo.address_to,
@@ -541,9 +525,33 @@ function insertTokenInfo(tokenInfo, connection) {
         tokenInfo.tx_id,
         params.symbol,
         params.tokenName,
-        params.totalSupplyStr,
+        params.totalSupply,
         params.decimals
     ];
     console.log('tokenInfo', tokenInfo);
+    insertContract(input, connection, 'contract_aelf20');
+}
+
+// 内置交易的token信息
+// {
+//     symbol: 'ELF',
+//     tokenName: 'elf token',
+//     supply: '999999998',
+//     totalSupply: '1000000000',
+//     decimals: 2,
+//     issuer: '2gaQh4uxg6tzyH1ADLoDxvHA14FMpzEiMqsQ6sDG5iHT8cmjp8',
+//     isBurnable: true
+// }
+function insertInnerToken(connection) {
+    const input = [
+        contractAddressList.token,
+        chainId,
+        'inner', // tokenInfo.block_hash,
+        'inner', // tokenInfo.tx_id,
+        'ELF', // params.symbol,
+        'elf token', // params.tokenName,
+        '1000000000', // params.totalSupplyStr,
+        2 // params.decimals
+    ];
     insertContract(input, connection, 'contract_aelf20');
 }

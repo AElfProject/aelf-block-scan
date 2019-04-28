@@ -12,7 +12,17 @@ const aelf = {
     // network: 'http://192.168.199.109:5000/chain'
     // network: 'http://192.168.197.56:8000/chain'
     // network: 'http://192.168.197.70:8000/chain'
-    network: 'http://192.168.197.56:8101/chain'
+    // network: 'http://192.168.197.56:8101/chain'
+    network: [
+        'http://192.168.197.56:8101/chain',
+        null,
+        null,
+        null,
+        [{
+            name: 'Accept',
+            value: 'text/plain;v=1.0'
+        }]
+    ]
     // network: 'http://192.168.197.56:8101/chain'
     // network: 'http://192.168.197.70:8000/chain'
 };
@@ -70,7 +80,7 @@ const dbTable = {
 };
 
 const defaultContracts = {
-    token: '4rkKQpsRFt1nU6weAHuJ6CfQDqo6dxruU3K3wNUFr6ZwZYc',
+    token: '2J9wWhuyz7Drkmtu9DTegM9rLmamjekmRkCAWz5YYPjm7akfbH',
     // 即 tokenConverter
     resource: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6',
     tokenConverter: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6'
