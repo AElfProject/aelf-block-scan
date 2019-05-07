@@ -24,13 +24,14 @@ const {
     insertBlock,
     insertContract
 } = require('./lib/insertPure.js');
+const {insertInnerToken} = require('./utils/insertInnerToken');
 const missingList = require('./lib/missingList');
 const {queryPromise} = require('./lib/mysql/queryPromise');
 const {getConnectionPromise} = require('./lib/mysql/getConnectionPromise');
 const {beginTransaction} = require('./lib/mysql/beginTransaction');
 
 const ScanTimer = require('./utils/ScanTimer');
-const getContractAddressByName = require('./utils/getContractAddressByName');
+// const getContractAddressByName = require('./utils/getContractAddressByName');
 const BlockUnconfirmed = require('./unconfirmed/removeRedundantData');
 
 const mysql = require('mysql');
@@ -93,7 +94,7 @@ function init() {
         chainId = chainInfo.ChainId;
         console.log('getChainInformation: ', err, chainInfo);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
-        insertInnerToken(aelfPool);
+        insertInnerToken(aelf, chainInfo, aelfPool);
         startScan(aelfPool, scanLimit);
     });
 }
@@ -291,7 +292,7 @@ function scanABlockPromise(listIndex, pool, isUnconfirmed = false) {
             reject(err);
         };
 
-        // aelf.chain.getBlockByHeight(1217, true, async (err, result) => {
+        // aelf.chain.getBlockByHeight(2331, true, async (err, result) => {
         aelf.chain.getBlockByHeight(listIndex, true, async (err, result) => {
             if (err || !result) {
                 failedCallback({
@@ -529,29 +530,5 @@ function insertTokenInfo(tokenInfo, connection) {
         params.decimals
     ];
     console.log('tokenInfo', tokenInfo);
-    insertContract(input, connection, 'contract_aelf20');
-}
-
-// 内置交易的token信息
-// {
-//     symbol: 'ELF',
-//     tokenName: 'elf token',
-//     supply: '999999998',
-//     totalSupply: '1000000000',
-//     decimals: 2,
-//     issuer: '2gaQh4uxg6tzyH1ADLoDxvHA14FMpzEiMqsQ6sDG5iHT8cmjp8',
-//     isBurnable: true
-// }
-function insertInnerToken(connection) {
-    const input = [
-        contractAddressList.token,
-        chainId,
-        'inner', // tokenInfo.block_hash,
-        'inner', // tokenInfo.tx_id,
-        'ELF', // params.symbol,
-        'elf token', // params.tokenName,
-        '1000000000', // params.totalSupplyStr,
-        2 // params.decimals
-    ];
     insertContract(input, connection, 'contract_aelf20');
 }

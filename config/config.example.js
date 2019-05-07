@@ -2,8 +2,13 @@
  * @file config.local.js
  * @author huangzongzhe
  */
+const AElf = require('aelf-sdk');
+const commonPrivateKey = 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71';
+const commonWallet = AElf.wallet.getWalletByPrivateKey(commonPrivateKey);
+
 const aelf = {
-    commonPrivateKey: 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71',
+    commonPrivateKey,
+    commonWallet,
     // the rpc URL of the AElf Chain Node.
     network: [
         'http://192.168.197.56:8101/chain',

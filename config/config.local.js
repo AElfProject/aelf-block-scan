@@ -2,8 +2,13 @@
  * @file config.local.js
  * @author huangzongzhe
  */
+const AElf = require('aelf-sdk');
+const commonPrivateKey = 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71';
+const commonWallet = AElf.wallet.getWalletByPrivateKey(commonPrivateKey);
+
 const aelf = {
-    commonPrivateKey: 'f6e512a3c259e5f9af981d7f99d245aa5bc52fe448495e0b0dd56e8406be6f71',
+    commonPrivateKey,
+    commonWallet,
     // the rpc URL of the AElf Chain Node.
     // network: 'http://localhost:1234/chain'
     // network: 'http://34.212.171.27:8000/chain'
@@ -14,7 +19,9 @@ const aelf = {
     // network: 'http://192.168.197.70:8000/chain'
     // network: 'http://192.168.197.56:8101/chain'
     network: [
-        'http://192.168.197.56:8101/chain',
+        // 'http://192.168.197.56:8101/chain',
+        // 'http://34.212.171.27:8000/chain',
+        'http://54.149.84.199:8000/chain',
         null,
         null,
         null,
@@ -23,8 +30,6 @@ const aelf = {
             value: 'text/plain;v=1.0'
         }]
     ]
-    // network: 'http://192.168.197.56:8101/chain'
-    // network: 'http://192.168.197.70:8000/chain'
 };
 
 const mysql = {
@@ -82,8 +87,8 @@ const dbTable = {
 const defaultContracts = {
     token: '2J9wWhuyz7Drkmtu9DTegM9rLmamjekmRkCAWz5YYPjm7akfbH',
     // 即 tokenConverter
-    resource: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6',
-    tokenConverter: '4QjhKLWacRXrQYpT7rzf74k5XZFCx8yF3X7FXbzKD4wwEo6'
+    resource: 'Acv7j84Ghi19JesSBQ8d56XenwCrJ5VBPvrS4mthtbuBjYtXR',
+    tokenConverter: 'Acv7j84Ghi19JesSBQ8d56XenwCrJ5VBPvrS4mthtbuBjYtXR'
 };
 
 module.exports = {
