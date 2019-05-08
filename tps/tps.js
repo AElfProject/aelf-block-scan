@@ -47,7 +47,7 @@ const tpsInsertSql = getInsertTpsSql();
 init(aelfPool);
 
 async function init(pool) {
-    const firstBlockInBlockTable = await queryPromise(pool, 'select * from blocks_0 where block_height=1', []);
+    const firstBlockInBlockTable = await queryPromise(pool, 'select * from blocks_0 where block_height=5', []);
     const latestBlockInTPSTable = await queryPromise(
         pool,
         'select * from tps_0 order by end DESC limit 1 offset 0',
