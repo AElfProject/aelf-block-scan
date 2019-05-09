@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 03/04/2019 21:24:52
+ Date: 09/05/2019 20:13:36
 */
 
 SET NAMES utf8mb4;
@@ -24,8 +24,9 @@ DROP TABLE IF EXISTS `address_contracts`;
 CREATE TABLE `address_contracts` (
   `address` varchar(64) NOT NULL,
   `contract_address` varchar(64) NOT NULL,
+  `symbol` varchar(64) NOT NULL,
   `update_time` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`address`,`contract_address`)
+  PRIMARY KEY (`address`,`contract_address`,`symbol`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -66,14 +67,14 @@ CREATE TABLE `blocks_unconfirmed` (
 DROP TABLE IF EXISTS `contract_aelf20`;
 CREATE TABLE `contract_aelf20` (
   `contract_address` varchar(64) NOT NULL,
+  `symbol` varchar(64) NOT NULL,
   `chain_id` varchar(64) NOT NULL,
   `block_hash` varchar(64) NOT NULL,
   `tx_id` varchar(64) NOT NULL,
-  `symbol` varchar(64) NOT NULL,
   `name` varchar(64) NOT NULL,
   `total_supply` bigint(64) unsigned NOT NULL,
   `decimals` int(32) DEFAULT NULL,
-  PRIMARY KEY (`symbol`,`contract_address`)
+  PRIMARY KEY (`symbol`,`contract_address`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -91,7 +92,7 @@ CREATE TABLE `nodes_0` (
   `owner` varchar(255) NOT NULL,
   `status` int(1) NOT NULL,
   `create_time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`contract_address`,`chain_id`)
+  PRIMARY KEY (`contract_address`,`chain_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
