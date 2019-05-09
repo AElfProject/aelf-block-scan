@@ -24,6 +24,7 @@ bash build.sh pro reinstall
 ### 1.Install Dependencies
 
 - 1.nodejs
+
 ```bash
 # official
 https://nodejs.org/en/download/
@@ -35,6 +36,7 @@ nvm install < your own version >= 8.10 >
 - 2.mysql or marialdb
 
 - 3.pm2 // Just run 'node index.js' is also ok.
+
 ```bash
 npm install -g pm2
 ```

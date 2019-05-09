@@ -11,3 +11,4 @@ log.js
 .vscode/
 .node-xmlhttprequest-**
 .DS_Store
+package-lock.json
