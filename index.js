@@ -87,16 +87,26 @@ try {
 }
 
 function init() {
-    aelf.chain.getChainStatus((err, chainInfo) => {
-        if (err) {
-            logger.error('aelf.chain.getChainInformation err: ', err);
-        }
+    aelf.chain.getChainStatus().then(chainInfo => {
         chainId = chainInfo.ChainId;
-        console.log('getChainInformation: ', err, chainInfo);
+        console.log('getChainInformation:111 ', chainInfo, chainInfo.ChainId, typeof result);
         const aelfPool = mysql.createPool(config.mysql.aelf0);
         insertInnerToken(aelf, chainInfo, aelfPool);
         startScan(aelfPool, scanLimit);
+    }).catch(error => {
+      console.log('aelf.chain.getChainInformation err: ', error);
+        logger.error('aelf.chain.getChainInformation err: ', error);
     });
+    // aelf.chain.getChainStatus((err, chainInfo) => {
+    //     if (err) {
+    //         logger.error('aelf.chain.getChainInformation err: ', err);
+    //     }
+    //     chainId = chainInfo.ChainId;
+    //     console.log('getChainInformation: ', err, chainInfo, chainInfo.ChainId, typeof chainInfo);
+    //     const aelfPool = mysql.createPool(config.mysql.aelf0);
+    //     insertInnerToken(aelf, chainInfo, aelfPool);
+    //     startScan(aelfPool, scanLimit);
+    // });
 }
 
 let restartTime = 0;
@@ -176,7 +186,8 @@ async function subscribe(pool, scanLimit) {
     }
 
     try {
-        blockHeightInChain = parseInt(aelf.chain.getBlockHeight(), 10);
+        const heightTemp = await aelf.chain.getBlockHeight();
+        blockHeightInChain = parseInt(heightTemp, 10);
     }
     catch (err) {
         restart(err, 'subscribe -> getBlockHeight()');

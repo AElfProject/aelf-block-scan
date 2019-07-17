@@ -33,9 +33,9 @@ function insertInnerToken(aelf, chainInfo, connection) {
     } = chainInfo;
 
     // TODO: SDK 改造成 async await, 不然回调地狱能玩死你。
-    aelf.chain.contractAtAsync(GenesisContractAddress, config.aelf.commonWallet, (err, zeroC) => {
+    aelf.chain.contractAt(GenesisContractAddress, config.aelf.commonWallet, (err, zeroC) => {
         zeroC.GetContractAddressByName.call(sha256('AElf.ContractNames.Token'), (err, address) => {
-            aelf.chain.contractAtAsync(address, config.aelf.commonWallet, (err, tokenC) => {
+            aelf.chain.contractAt(address, config.aelf.commonWallet, (err, tokenC) => {
                 tokenC.GetTokenInfo.call({
                     symbol: 'ELF'
                 }, (err, tokenInfo) => {
