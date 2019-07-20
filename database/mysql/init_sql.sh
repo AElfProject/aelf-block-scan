@@ -1,1 +1,1 @@
-mysql -uroot -p aelf_test_minghui < aelf_test.sql;
+mysql -uroot -p aelf_main_chain < aelf_test.sql;
