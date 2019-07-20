@@ -12,13 +12,13 @@ const wallet = Wallet.getWalletByPrivateKey(defaultPrivateKey);
 
 module.exports = function getContractAddressByName(contractName, aelf) {
 
-    const {
-        GenesisContractAddress
-    } = aelf.chain.getChainStatus();
+  const {
+    GenesisContractAddress
+  } = aelf.chain.getChainStatus();
 
-    const zeroC = aelf.chain.contractAt(GenesisContractAddress, wallet);
+  const zeroC = aelf.chain.contractAt(GenesisContractAddress, wallet);
 
-    // const tokenContractAddress = zeroC.GetContractAddressByName.call(sha256('AElf.ContractNames.Token')); // HelloWorldContract
-    const tokenContractAddress = zeroC.GetContractAddressByName.call(sha256(contractName)); // HelloWorldContract
-    return tokenContractAddress;
+  // const tokenContractAddress = zeroC.GetContractAddressByName.call(sha256('AElf.ContractNames.Token')); // HelloWorldContract
+  const tokenContractAddress = zeroC.GetContractAddressByName.call(sha256(contractName)); // HelloWorldContract
+  return tokenContractAddress;
 };

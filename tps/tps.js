@@ -16,7 +16,9 @@
 
 const moment = require('moment');
 const mysql = require('mysql');
-const {queryPromise} = require('../lib/mysql/queryPromise');
+const {
+  queryPromise
+} = require('../lib/mysql/queryPromise');
 let config = require('../config/configInit.js').config;
 config.mysql.aelf0.connectionLimit = Math.ceil(config.mysql.aelf0.connectionLimit / 4);
 
@@ -47,188 +49,184 @@ const tpsInsertSql = getInsertTpsSql();
 init(aelfPool);
 
 async function init(pool) {
-    const firstBlockInBlockTable = await queryPromise(pool, 'select * from blocks_0 where block_height=5', []);
-    const latestBlockInTPSTable = await queryPromise(
-        pool,
-        'select * from tps_0 order by end DESC limit 1 offset 0',
-        []
-    );
+  const firstBlockInBlockTable = await queryPromise(pool, 'select * from blocks_0 where block_height=5', []);
+  const latestBlockInTPSTable = await queryPromise(
+    pool,
+    'select * from tps_0 order by end DESC limit 1 offset 0',
+    []
+  );
 
-    const startTimeUnix01 = firstBlockInBlockTable[0] && moment(firstBlockInBlockTable[0].time).unix() || 0;
-    if (!startTimeUnix01) {
-        const errorMsg = 'can not find the first block in Database!';
-        console.error(errorMsg);
-        throw Error(errorMsg);
-    }
+  const startTimeUnix01 = firstBlockInBlockTable[0] && moment(firstBlockInBlockTable[0].time).unix() || 0;
+  if (!startTimeUnix01) {
+    const errorMsg = 'can not find the first block in Database!';
+    console.error(errorMsg);
+    throw Error(errorMsg);
+  }
 
-    const startTimeUnix02 = latestBlockInTPSTable.length ? moment(latestBlockInTPSTable[0].end).unix() : 0;
-    const startTimeUnix = Math.max(startTimeUnix01, startTimeUnix02);
+  const startTimeUnix02 = latestBlockInTPSTable.length ? moment(latestBlockInTPSTable[0].end).unix() : 0;
+  const startTimeUnix = Math.max(startTimeUnix01, startTimeUnix02);
 
-    getTpsTypeFilter(pool, startTimeUnix);
+  getTpsTypeFilter(pool, startTimeUnix);
 }
 
 function getTpsTypeFilter(pool, startTimeUnix) {
-    const currentStartInterval = CURRENTTIME - startTimeUnix;
+  const currentStartInterval = CURRENTTIME - startTimeUnix;
 
-    let endTimeUnix = startTimeUnix + INTERVAL;
-    let insertBatch = false;
+  let endTimeUnix = startTimeUnix + INTERVAL;
+  let insertBatch = false;
 
-    if (currentStartInterval > BATCHLIMITTIME) {
-        if (currentStartInterval > BATCHDAYINTERVAL) {
-            endTimeUnix = startTimeUnix + BATCHDAYINTERVAL;
-        }
-        else {
-            endTimeUnix = CURRENTTIME - BATCHLIMITTIME;
-        }
-        insertBatch = true;
+  if (currentStartInterval > BATCHLIMITTIME) {
+    if (currentStartInterval > BATCHDAYINTERVAL) {
+      endTimeUnix = startTimeUnix + BATCHDAYINTERVAL;
+    } else {
+      endTimeUnix = CURRENTTIME - BATCHLIMITTIME;
     }
-    console.log('getTpsTypeFilter: ', insertBatch);
-    getTps(pool, startTimeUnix, endTimeUnix, insertBatch);
+    insertBatch = true;
+  }
+  console.log('getTpsTypeFilter: ', insertBatch);
+  getTps(pool, startTimeUnix, endTimeUnix, insertBatch);
 }
 
 function getInsertTpsSql(tpsValueBlankString) {
-    const tpsTableKeys = [
-        // id, auto increment
-        'start',
-        'end',
-        'txs',
-        'blocks',
-        'tps',
-        'tpm',
-        'type'
-    ];
+  const tpsTableKeys = [
+    // id, auto increment
+    'start',
+    'end',
+    'txs',
+    'blocks',
+    'tps',
+    'tpm',
+    'type'
+  ];
 
-    let tpsValuesBlank = tpsTableKeys.map(() => {
-        return '?';
-    });
+  let tpsValuesBlank = tpsTableKeys.map(() => {
+    return '?';
+  });
 
-    let tpsKeysString = `(${tpsTableKeys.join(',')})`;
-    let tpsValuesBlankStringDefault = `(${tpsValuesBlank.join(',')})`;
+  let tpsKeysString = `(${tpsTableKeys.join(',')})`;
+  let tpsValuesBlankStringDefault = `(${tpsValuesBlank.join(',')})`;
 
-    tpsValueBlankString = tpsValueBlankString || tpsValuesBlankStringDefault;
+  tpsValueBlankString = tpsValueBlankString || tpsValuesBlankStringDefault;
 
-    const tpsInsertSql
-        = `insert into tps_0 ${tpsKeysString} VALUES ${tpsValueBlankString}`
-        + 'ON DUPLICATE KEY UPDATE start=(start);';
-    return tpsInsertSql;
+  const tpsInsertSql = `insert into tps_0 ${tpsKeysString} VALUES ${tpsValueBlankString}` +
+    'ON DUPLICATE KEY UPDATE start=(start);';
+  return tpsInsertSql;
 }
 
 async function insertTps(pool, blocks, startTime, endTime) {
-    if (blocks.length) {
-        let txCount = 0;
-        blocks.map(block => {
-            txCount += parseInt(block.tx_count, 10);
-        });
-        const tps = txCount / INTERVAL;
-        const tpm = txCount * 60 / INTERVAL;
+  if (blocks.length) {
+    let txCount = 0;
+    blocks.map(block => {
+      txCount += parseInt(block.tx_count, 10);
+    });
+    const tps = txCount / INTERVAL;
+    const tpm = txCount * 60 / INTERVAL;
 
-        // Key in DateBase [startTime, endTime, txCount, blocksCount, tps, tpm, type];
-        const queryValues = [startTime, endTime, txCount, blocks.length, tps, tpm, MINUTES];
-        await queryPromise(pool, tpsInsertSql, queryValues);
-    } else {
-        const queryValues = [startTime, endTime, 0, 0, 0, 0, MINUTES];
-        await queryPromise(pool, tpsInsertSql, queryValues);
-    }
+    // Key in DateBase [startTime, endTime, txCount, blocksCount, tps, tpm, type];
+    const queryValues = [startTime, endTime, txCount, blocks.length, tps, tpm, MINUTES];
+    await queryPromise(pool, tpsInsertSql, queryValues);
+  } else {
+    const queryValues = [startTime, endTime, 0, 0, 0, 0, MINUTES];
+    await queryPromise(pool, tpsInsertSql, queryValues);
+  }
 }
 
 async function insertTpsBatch(pool, tpsList) {
-    const startTime = (new Date()).getTime();
+  const startTime = (new Date()).getTime();
 
-    let blankTemp = [];
-    for (let each in tpsList[0]) {
-        blankTemp.push('?');
+  let blankTemp = [];
+  for (let each in tpsList[0]) {
+    blankTemp.push('?');
+  }
+  // blankString Demo: (?, ?, ?, ?, ?, ?, ?)
+  let blankString = `(${blankTemp.join(',')})`;
+
+  let tpsValueList = [];
+  let tpsValueBlankString = blankString;
+
+  for (let index = 0, length = tpsList.length; index < length; index++) {
+    if (index) {
+      tpsValueBlankString += ',' + blankString;
     }
-    // blankString Demo: (?, ?, ?, ?, ?, ?, ?)
-    let blankString = `(${blankTemp.join(',')})`;
-
-    let tpsValueList = [];
-    let tpsValueBlankString = blankString;
-
-    for (let index = 0, length = tpsList.length; index < length; index++) {
-        if (index) {
-            tpsValueBlankString += ',' + blankString;
-        }
-        const item = tpsList[index];
-        for (let each in item) {
-            tpsValueList.push(item[each]);
-        }
+    const item = tpsList[index];
+    for (let each in item) {
+      tpsValueList.push(item[each]);
     }
+  }
 
-    const tpsInsertSql = getInsertTpsSql(tpsValueBlankString);
-    await queryPromise(pool, tpsInsertSql, tpsValueList);
+  const tpsInsertSql = getInsertTpsSql(tpsValueBlankString);
+  await queryPromise(pool, tpsInsertSql, tpsValueList);
 
-    console.log('insert time: ', ((new Date()).getTime()) - startTime);
+  console.log('insert time: ', ((new Date()).getTime()) - startTime);
 }
 
 async function getTps(pool, startTimeUnix, endTimeUnix, insertBatch = false) {
-    // Mysql '2018-11-05T03:29:18Z' and '2018-11-05T03:34:18Z'
-    // Will not get the data of 2018-11-05T03:29:18.xxxZ
-    // startTimeUnix -= 1;
-    const startTime = moment.unix(startTimeUnix).utc().format();
-    const endTime = moment.unix(endTimeUnix).utc().format();
-    const blocksConfirmed = await queryPromise(
-        pool,
-        'select * from blocks_0 where time between ? and ? order by time ASC',
-        [startTime, endTime]
-    );
-    const blocksUnconfirmed = await queryPromise(
-        pool,
-        'select * from blocks_unconfirmed where time between ? and ? order by time ASC',
-        [startTime, endTime]
-    );
-    const blocks = blocksConfirmed.length ? blocksConfirmed : blocksUnconfirmed;
+  // Mysql '2018-11-05T03:29:18Z' and '2018-11-05T03:34:18Z'
+  // Will not get the data of 2018-11-05T03:29:18.xxxZ
+  // startTimeUnix -= 1;
+  const startTime = moment.unix(startTimeUnix).utc().format();
+  const endTime = moment.unix(endTimeUnix).utc().format();
+  const blocksConfirmed = await queryPromise(
+    pool,
+    'select * from blocks_0 where time between ? and ? order by time ASC',
+    [startTime, endTime]
+  );
+  const blocksUnconfirmed = await queryPromise(
+    pool,
+    'select * from blocks_unconfirmed where time between ? and ? order by time ASC',
+    [startTime, endTime]
+  );
+  const blocks = blocksConfirmed.length ? blocksConfirmed : blocksUnconfirmed;
 
-    if (insertBatch) {
-        let needInsertList = [];
-        for (let timeTemp = startTimeUnix, timeIndex = 0; timeTemp < endTimeUnix; timeTemp += INTERVAL, timeIndex++) {
-            const startTimeUnixTemp = timeTemp;
-            const endTimeUnixTemp = timeTemp + INTERVAL;
-            let option = {
-                start: moment.unix(startTimeUnixTemp).utc().format(),
-                end: moment.unix(endTimeUnixTemp).utc().format(),
-                txs: 0,
-                blocks: 0,
-                tps: 0,
-                tpm: 0,
-                type: MINUTES
-            };
-            for (let index = 0, length = blocks.length; index < length; index++) {
-                const block = blocks[0];
-                const blockTime = block.time;
-                const blockTimeUnix = moment(blockTime).unix();
+  if (insertBatch) {
+    let needInsertList = [];
+    for (let timeTemp = startTimeUnix, timeIndex = 0; timeTemp < endTimeUnix; timeTemp += INTERVAL, timeIndex++) {
+      const startTimeUnixTemp = timeTemp;
+      const endTimeUnixTemp = timeTemp + INTERVAL;
+      let option = {
+        start: moment.unix(startTimeUnixTemp).utc().format(),
+        end: moment.unix(endTimeUnixTemp).utc().format(),
+        txs: 0,
+        blocks: 0,
+        tps: 0,
+        tpm: 0,
+        type: MINUTES
+      };
+      for (let index = 0, length = blocks.length; index < length; index++) {
+        const block = blocks[0];
+        const blockTime = block.time;
+        const blockTimeUnix = moment(blockTime).unix();
 
-                if (blockTimeUnix < endTimeUnixTemp) {
-                    option.txs += parseInt(block.tx_count, 10);
-                    option.blocks++;
-                    blocks.shift();
-                }
-                else {
-                    break;
-                }
-            }
-            option.tps = option.txs / INTERVAL;
-            option.tpm = option.txs / MINUTES;
-            needInsertList.push(option);
+        if (blockTimeUnix < endTimeUnixTemp) {
+          option.txs += parseInt(block.tx_count, 10);
+          option.blocks++;
+          blocks.shift();
+        } else {
+          break;
         }
-
-        // console.log(blocks[0], needInsertList, needInsertList.length);
-        await insertTpsBatch(pool, needInsertList);
-        getTpsTypeFilter(pool, endTimeUnix);
-        return;
+      }
+      option.tps = option.txs / INTERVAL;
+      option.tpm = option.txs / MINUTES;
+      needInsertList.push(option);
     }
 
-    const newEndTimeUnix = endTimeUnix + INTERVAL;
-    const nowTimeUnix = (new Date()).getTime() / 1000;
+    // console.log(blocks[0], needInsertList, needInsertList.length);
+    await insertTpsBatch(pool, needInsertList);
+    getTpsTypeFilter(pool, endTimeUnix);
+    return;
+  }
 
-    console.log('FYI: ', endTimeUnix, newEndTimeUnix, nowTimeUnix, nowTimeUnix - newEndTimeUnix);
-    if (newEndTimeUnix < (nowTimeUnix - DEALYTIME)) {
-        await insertTps(pool, blocks, startTime, endTime);
-        getTpsTypeFilter(pool, endTimeUnix);
-    }
-    else {
-        console.log('into interval, interval seconds: ', SCANINTERVAL / 1000);
-        setTimeout(function () {
-            getTps(pool, startTimeUnix, endTimeUnix);
-        }, SCANINTERVAL);
-    }
+  const newEndTimeUnix = endTimeUnix + INTERVAL;
+  const nowTimeUnix = (new Date()).getTime() / 1000;
+
+  console.log('FYI: ', endTimeUnix, newEndTimeUnix, nowTimeUnix, nowTimeUnix - newEndTimeUnix);
+  if (newEndTimeUnix < (nowTimeUnix - DEALYTIME)) {
+    await insertTps(pool, blocks, startTime, endTime);
+    getTpsTypeFilter(pool, endTimeUnix);
+  } else {
+    console.log('into interval, interval seconds: ', SCANINTERVAL / 1000);
+    setTimeout(function () {
+      getTps(pool, startTimeUnix, endTimeUnix);
+    }, SCANINTERVAL);
+  }
 }
