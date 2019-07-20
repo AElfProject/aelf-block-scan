@@ -30,7 +30,7 @@ bash build.sh pro reinstall
 https://nodejs.org/en/download/
 
 # nvm (if you have installed nvm)
-nvm install < your own version >= 8.10 >
+nvm install <your own version >= 10.13.0>
 ```
 
 - 2.mysql or marialdb
@@ -43,7 +43,7 @@ npm install -g pm2
 
 ### 2.Initialize Mysql Database
 
-`init_sql.sh` for you information.
+`database/mysql/init_sql.sh` for you information.
 
 Warning:
 
@@ -77,7 +77,7 @@ cp ./config/config.example.js ./config/config.local.js
 
 # set your own aelf, mysql config at first.
 
-# If you want to collect the TPM.
+# If you want to collect the TPM(Transactions Per Minute).
 # In config.js or config.local.js
 set initTPSAcquisition=ture.
 # If you want to collect the data of resource system
@@ -92,7 +92,7 @@ You can use build.sh now.
 Or start the server manually.
 
 ```bash
-# You can see the detail in build.sh
+# You can get the detail information in build.sh
 npm install
 
 # use /config/config.local.js
@@ -127,7 +127,7 @@ Please check the AElf Node RPC Server.
 node
 
 var Aelf = require('aelf-sdk');
-var aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:8000/chain"));
+var aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:8000"));
 aelf.chain.connectChain();
 ```
 

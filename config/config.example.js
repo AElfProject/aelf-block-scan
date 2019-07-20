@@ -11,14 +11,15 @@ const aelf = {
     commonWallet,
     // the rpc URL of the AElf Chain Node.
     network: [
-        'http://192.168.197.56:8101/chain',
-        null,
-        null,
-        null,
-        [{
-            name: 'Accept',
-            value: 'text/plain;v=1.0'
-        }]
+        'http://34.213.112.35:8000' // AElf test net
+        // ,
+        // null,
+        // null,
+        // null,
+        // [{
+        //     name: 'Accept',
+        //     value: 'text/plain;v=1.0'
+        // }]
     ]
 };
 
@@ -62,7 +63,8 @@ const dbTable = {
 };
 
 const defaultContracts = {
-    token: '2J9wWhuyz7Drkmtu9DTegM9rLmamjekmRkCAWz5YYPjm7akfbH',
+    // Token合约可以通过getContractAddressByName来获取
+    token: 'WnV9Gv3gioSh3Vgaw8SSB96nV8fWUNxuVozCf6Y14e7RXyGaM',
     resource: 'Acv7j84Ghi19JesSBQ8d56XenwCrJ5VBPvrS4mthtbuBjYtXR',
     tokenConverter: 'Acv7j84Ghi19JesSBQ8d56XenwCrJ5VBPvrS4mthtbuBjYtXR'
 };
