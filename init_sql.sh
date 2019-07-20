@@ -1,1 +1,0 @@
-mysql -uroot -p aelf_test_minghui < aelf_test.sql;

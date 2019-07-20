@@ -1,0 +1,1 @@
+mysql -uroot -p aelf_main_chain < aelf_test.sql;

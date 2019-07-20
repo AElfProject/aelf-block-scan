@@ -11,7 +11,7 @@
  Target Server Version : 100309
  File Encoding         : 65001
 
- Date: 09/05/2019 20:13:36
+ Date: 19/07/2019 19:48:46
 */
 
 SET NAMES utf8mb4;
@@ -189,14 +189,19 @@ CREATE TABLE `transactions_unconfirmed` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
--- Table structure for whitelist
+-- Table structure for user
 -- ----------------------------
-DROP TABLE IF EXISTS `whitelist`;
-CREATE TABLE `whitelist` (
-  `ip` varchar(128) NOT NULL COMMENT 'You can allow the ip use get or post of your API.',
-  `domain` varchar(255) DEFAULT NULL,
-  `type` varchar(16) DEFAULT NULL COMMENT 'get/post',
-  PRIMARY KEY (`ip`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user` (
+  `id` int(255) NOT NULL,
+  `address` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `avatar_url` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `phone` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 SET FOREIGN_KEY_CHECKS = 1;
