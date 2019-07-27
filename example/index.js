@@ -10,6 +10,7 @@ const {
   QUERY_TYPE
 } = require('../src/index');
 
+// get an AElf instance
 const aelf = new AElf(new AElf.providers.HttpProvider('http://18.162.41.20:8000'));
 
 class DBOperation extends DBBaseOperation {
@@ -18,11 +19,20 @@ class DBOperation extends DBBaseOperation {
     this.lastTime = new Date().getTime();
   }
 
+  /**
+   * init before start scanning
+   */
   init() {
     console.log('init');
   }
 
-  insert(data) {
+  /**
+   * will be called in every parallel scanning, could be defined as an async functions.
+   * each element in `txs` is an array of transactions
+   * each element in `txs` is correspond to the block in `blocks` with the same `index`
+   * @param {{blocks: [], txs: [], LIBHeight: Number, bestHeight: Number}} data
+   */
+  async insert(data) {
     const now = new Date().getTime();
     console.log(`take time ${now - this.lastTime}ms`);
     this.lastTime = now;
@@ -38,6 +48,7 @@ class DBOperation extends DBBaseOperation {
         console.log('INIT');
         break;
       case QUERY_TYPE.MISSING:
+        // there is no LIBHeight and bestHeight in data when querying missing heights
         console.log('MISSING');
         break;
       case QUERY_TYPE.GAP:
@@ -63,6 +74,9 @@ class DBOperation extends DBBaseOperation {
     console.log('\n\n\n');
   }
 
+  /**
+   * close sql connection or something
+   */
   destroy() {
     console.log('destroy');
   }

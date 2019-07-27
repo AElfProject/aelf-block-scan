@@ -1,159 +1,209 @@
 # AElf Block Scan
 
 A tool to scan the AElf Chain.
+* You can use this library to scan the specify AElf node and get the blocks and transactions in blocks.
+* By implementing the `DBBaseOperation` class, you can get the data in `insert` hook and implement the insert operations with anything you want.
 
-- We can insert the data(transactions/blocks/token_contract) of AElf Chain into Databases(only mysql now) through this tool.
-- We can collect the TPM(transactions per minutes).`optional`
-
-## Quick Start
-
-- Ensure dependencies are ready.(nodejs, pm2, mysql)
-- Ensure config are ready.(mysql, RPC URL, TPM, etc.)
-- If you running your own AElf Chain. Please make sure the token contract is ready.
-
-```shell
-# bash, but not sh build.sh
-bash build.sh < type> < npm action>
-# Demos
-bash build.sh dev
-bash build.sh dev reinstall
-bash build.sh pro
-bash build.sh pro reinstall
-```
-
-### 1.Install Dependencies
-
-- 1.nodejs
+## Installation
 
 ```bash
-# official
-https://nodejs.org/en/download/
+# use npm
+npm i aelf-block-scan --save
 
-# nvm (if you have installed nvm)
-nvm install <your own version >= 10.13.0>
+# use yarn
+yarn
 ```
 
-- 2.mysql or marialdb
+## Usage
 
-- 3.pm2 // Just run 'node index.js' is also ok.
+Check the `example/index.js` as a reference
 
-```bash
-npm install -g pm2
+### Step.1
+
+Create an AElf instance
+```javascript
+const AElf = require('aelf-sdk');
+const aelf = new AElf(new AElf.providers.HttpProvider('http://18.162.41.20:8000'));
 ```
 
-### 2.Initialize Mysql Database
+### Step.2
 
-`database/mysql/init_sql.sh` for you information.
+Implement the DBBaseOperation class.
 
-Warning:
+There are three phases while scanning, and all phases can be identified by the `type` filed in `insert` function argument `data` 
+* Phase.1: scanning the `missingHeights` given by the `config`;
+* Phase.2: scanning blocks and transactions from `startHeight` to `LIBHeight`;
+* Phase.3: scanning in loop, from the last `LIBHeight` got from previous loop to current `bestHeight` in current loop.  
 
-- Please pay attention to Mysql connectionLimit. The Default connectionLimit of Mysql is 100.
-- Please do not use admin. Use the normal users without SUPER privilege.
-
-Grant Demo
-
-```bash
-# Use the smallest privilege.
-CREATE USER 'normal_aelf'@'localhost' IDENTIFIED BY 'password';
-GRANT select, insert, update, delete on aelf_test.* TO 'normal_aelf'@'localhost';
-```
-
-Reset max connections Demo
-
-```bash
-mysql> show variables like 'max_connections';
-mysql> set GLOBAL max_connections=650;
-# get the status of current connnections
-mysql> show full processlist;
-```
-
-### 3.Set your own config
-
-```bash
-# for production
-cp ./config/config.example.js ./config/config.js
-# for dev
-cp ./config/config.example.js ./config/config.local.js
-
-# set your own aelf, mysql config at first.
-
-# If you want to collect the TPM(Transactions Per Minute).
-# In config.js or config.local.js
-set initTPSAcquisition=ture.
-# If you want to collect the data of resource system
-# In config.js or config.local.js
-set resourceContractAddress=your resource contract address
-```
-
-### 4.Start the node Server
-
-You can use build.sh now.
-
-Or start the server manually.
-
-```bash
-# You can get the detail information in build.sh
-npm install
-
-# use /config/config.local.js
-# dev
-node index.js
-# dev, use pm2
-pm2 start index.js --name aelf-block-scan
-
-# use /config/config.js
-# pro
-NODE_ENV=production node index.js
-# pro, use pm2
-NODE_ENV=production pm2 start index.js --name aelf-block-scan
-```
-
-### 5.Logs
-
-default path
-
-- aelf-block-scan/log
-- ~/.pm2/logs/
-
-## FAQ
-
-### 1.Error: Invalid JSON RPC response: undefined
-
-Please check the AElf Node RPC Server.
+In all phases, query blocks and transactions with a maximal concurrent limit. 
 
 ```javascript
-// quick check
+const {
+  Scanner,
+  DBBaseOperation,
+  QUERY_TYPE
+} = require('aelf-block-scan');
 
-node
+class DBOperation extends DBBaseOperation {
+  constructor(config) {
+    super(config);
+    this.lastTime = new Date().getTime();
+  }
+  
+  /**
+   * init before start scanning
+   */
+  init() {
+    console.log('init');
+  }
 
-var Aelf = require('aelf-sdk');
-var aelf = new Aelf(new Aelf.providers.HttpProvider("http://localhost:8000"));
-aelf.chain.connectChain();
+  /**
+   * will be called in every parallel scanning, could be defined as an async functions.
+   * each element in `txs` is an array of transactions
+   * each element in `txs` is correspond to the block in `blocks` with the same `index`
+   * @param {{blocks: [], txs: [], LIBHeight: Number, bestHeight: Number}} data
+   */
+  async insert(data) {
+    const now = new Date().getTime();
+    console.log(`take time ${now - this.lastTime}ms`);
+    this.lastTime = now;
+    const {
+      blocks,
+      txs,
+      type,
+      bestHeight,
+      LIBHeight
+    } = data;
+    // identify the phase
+    switch (type) {
+      case QUERY_TYPE.INIT:
+        console.log('INIT');
+        break;
+      case QUERY_TYPE.MISSING:
+        // there is no LIBHeight and bestHeight in data when querying missing heights
+        console.log('MISSING');
+        break;
+      case QUERY_TYPE.GAP:
+        console.log('GAP');
+        console.log('LIBHeight', LIBHeight);
+        break;
+      case QUERY_TYPE.LOOP:
+        console.log('LOOP');
+        console.log('bestHeight', bestHeight);
+        console.log('LIBHeight', LIBHeight);
+        break;
+      case QUERY_TYPE.ERROR:
+        console.log('ERROR');
+        break;
+      default:
+        break;
+    }
+    console.log('blocks length', blocks.length);
+    console.log('transactions length', txs.reduce((acc, i) => acc.concat(i), []).length);
+    if (blocks.length > 0) {
+      console.log('highest height', blocks[blocks.length - 1].Header.Height);
+    }
+    console.log('\n\n\n');
+  }
+  
+  /**
+   * close sql connection or something
+   */
+  destroy() {
+    console.log('destroy');
+  }
+}
 ```
 
-### 2.EACCES: permission denied, mkdir '/home/xxxx/github/aelf-block-scan/log'
+There are three methods that must be implemented:
 
-Please make sure you have the write permission of the dir when you use pm2/node start the project.
+* `init`: will be called before scanning, this method could include database initializing
+* `insert`: will be called after query a `concurrentQueryLimit` results, the argument `data`
+is an object and contains three fields:
+    * blocks: the array of blocks
+    * txs: the array of transactions array, each element in `txs` is correspond to the block in `blocks` with the same `index`
+    * LIBHeight: the current LIBHeight of chain (unavailable in `Phase.1`)
+    * bestHeight: the current bestHeight of chain (unavailable in `Phase.1`)
 
-### 3.Error: ER_ACCESS_DENIED_ERROR: Access denied for user 'normal_aelf'@'localhost'
+* `destory`: will be called when error happened, you can close the database connection
 
-Please make sure you have create the user.
+### Step.3
 
-Checking your user & password.
+Create an instance of Scanner and call `start` method
 
-Set 127.0.0.1 but not localhost for mysql.host.
-(If your want to use localhost, please look at mysql docs.)
+`const scanner = new Scanner(new DBOperation(), options)`;
 
-### 4.Error: ER_CON_COUNT_ERROR: Too many connections
+the `options` argument is an object, the default options and valid fields are shown below:
 
-```mysql
-mysql> show full processlist;
+```javascript
+const defaultOptions = {
+  // in Phase.3, the timeout of each loop
+  // when chase up to last irreversible block height, start query in loop with this interval
+  interval: 4000, // ms
+  // the size of transactions per query in `aelf.chain.getTxResults`
+  txResultsPageSize: 100,
+  // max queries in parallel
+  concurrentQueryLimit: 40,
+  // query from this height, include this height
+  startHeight: 0,
+  // If the differences between startHeight and last irreversible block height
+  // is lower than heightGap, start loop just now
+  // heightGap: 50,
+  // missing height list, the heights you want to query and insert
+  missingHeightList: [],
+  // the instance of aelf-sdk
+  aelfInstance: new AElf(new AElf.providers.HttpProvider('http:127.0.0.1:8000/')),
+  // max inserted Data into database 
+  maxInsert: 200,
+  // unconfirmed block buffer
+  unconfirmedBlockBuffer: 60,
+  // config for log4js
+  log4Config: {
+    appenders: {
+      transaction: {
+        type: 'file',
+        filename: 'transaction.log'
+      },
+      block: {
+        type: 'file',
+        filename: 'block.log'
+      },
+      error: {
+        type: 'file',
+        filename: 'error.log'
+      }
+    },
+    categories: {
+      default: { appenders: ['transaction', 'block', 'error'], level: 'info' },
+      transaction: { appenders: ['transaction'], level: 'info' },
+      block: { appenders: ['block'], level: 'info' }
+    }
+  }
+}
 ```
 
-### 5.Can not pull the newest code when use build.sh.
+Example:
 
-May you need change the build.sh. Please see the implemention of build.sh.
+```javascript
+const {
+  Scanner,
+  DBBaseOperation,
+  QUERY_TYPE
+} = require('aelf-sdk');
 
-## procfile pandora [TODO]
+const scanner = new Scanner(new DBOperation(), {
+  aelfInstance: aelf,
+  startHeight: 11000,
+  missingHeightList: [12, 1414],
+  interval: 8000,
+  concurrentQueryLimit: 30,
+  maxInsert: 100
+});
+scanner.start().then(res => {
+  // in Phase.3 loop
+  console.log(res);
+}).catch(err => {
+  console.log(err);
+});
+```
 
-## Docker [TODO]
