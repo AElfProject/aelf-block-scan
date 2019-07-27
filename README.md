@@ -5,7 +5,7 @@ A tool to scan the AElf Chain.
 - We can insert the data(transactions/blocks/token_contract) of AElf Chain into Databases(only mysql now) through this tool.
 - We can collect the TPM(transactions per minutes).`optional`
 
-## Quicke Start
+## Quick Start
 
 - Ensure dependencies are ready.(nodejs, pm2, mysql)
 - Ensure config are ready.(mysql, RPC URL, TPM, etc.)
