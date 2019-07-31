@@ -1,6 +1,6 @@
 {
   "name": "aelf-block-scan",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "An AElf block scanner",
   "main": "src/index.js",
   "scripts": {
@@ -31,6 +31,13 @@
     "lint-staged": "^9.2.0",
     "standard-version": "^6.0.1"
   },
+  "files": [
+    "example",
+    "src",
+    "CHANGELOG.md",
+    "README.md",
+    "yarn.lock"
+  ],
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
