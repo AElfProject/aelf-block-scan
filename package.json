@@ -1,19 +1,48 @@
 {
   "name": "aelf-block-scan",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.1",
+  "description": "An AElf block scanner",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "commit": "git-cz",
+    "release": "standard-version"
   },
   "author": "huangzongzhe",
-  "license": "ISC",
+  "license": "MIT",
+  "devEngines": {
+    "node": "10.x || 11.x || 12.x"
+  },
   "dependencies": {
-    "aelf-sdk": "^3.0.0",
-    "ali-rds": "^3.0.1",
-    "log4js": "^3.0.5",
-    "moment": "^2.22.2",
-    "mysql": "^2.16.0",
-    "redis": "^2.8.0"
+    "aelf-sdk": "^3.2.11",
+    "cross-env": "^5.2.0",
+    "log4js": "^3.0.5"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.2",
+    "chalk": "^2.4.2",
+    "commitizen": "^4.0.3",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-babel": "^5.3.0",
+    "eslint-plugin-import": "^2.18.2",
+    "git-cz": "^3.2.1",
+    "husky": "^3.0.1",
+    "jest": "^24.8.0",
+    "lint-staged": "^9.2.0",
+    "standard-version": "^6.0.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "node scripts/verify-commit-msg.js"
+    }
+  },
+  "lint-staged": {
+    "*.js": "eslint"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
