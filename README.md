@@ -1,8 +1,8 @@
 # AElf Block Scan
 
 A tool to scan the AElf Chain.
-* You can use this library to scan the specify AElf node and get the blocks and transactions in blocks.
-* By implementing the `DBBaseOperation` class, you can get the data in `insert` hook and implement the insert operations with anything you want.
+* You can use this library to scan the specific AElf node and get the blocks and transactions in blocks.
+* By implementing the `DBBaseOperation` class, you can get the data in `insert` hook and implement the SQL operations with anything you want.
 
 ## Installation
 
@@ -28,7 +28,7 @@ const aelf = new AElf(new AElf.providers.HttpProvider('http://18.162.41.20:8000'
 
 ### Step.2
 
-Implement the DBBaseOperation class.
+Implement the `DBBaseOperation` class.
 
 There are three phases while scanning, and all phases can be identified by the `type` filed in `insert` function argument `data` 
 * Phase.1: scanning the `missingHeights` given by the `config`;
@@ -36,6 +36,17 @@ There are three phases while scanning, and all phases can be identified by the `
 * Phase.3: scanning in loop, from the last `LIBHeight` got from previous loop to current `bestHeight` in current loop.  
 
 In all phases, query blocks and transactions with a maximal concurrent limit. 
+
+There are three methods that must be implemented in sub-class of `DBBaseOperation`
+
+* `init`: will be called before scanning, this method could include database initializing
+* `insert`: called when the length of blocks already queried is equal to the `maxInsert` given in `options`, the argument `data`
+is an object and contains three fields:
+    * blocks: the array of blocks
+    * txs: the array of transactions array, each element in `txs` is correspond to the block in `blocks` with the same `index`
+    * LIBHeight: the current LIBHeight of chain (unavailable in `Phase.1`)
+    * bestHeight: the current bestHeight of chain (unavailable in `Phase.1`)
+* `destory`: called when error happening or exiting from the scanning process, you can close the database connection
 
 ```javascript
 const {
@@ -51,7 +62,7 @@ class DBOperation extends DBBaseOperation {
   }
   
   /**
-   * init before start scanning
+   * init before starting scanning
    */
   init() {
     console.log('init');
@@ -114,18 +125,6 @@ class DBOperation extends DBBaseOperation {
   }
 }
 ```
-
-There are three methods that must be implemented:
-
-* `init`: will be called before scanning, this method could include database initializing
-* `insert`: will be called after query a `concurrentQueryLimit` results, the argument `data`
-is an object and contains three fields:
-    * blocks: the array of blocks
-    * txs: the array of transactions array, each element in `txs` is correspond to the block in `blocks` with the same `index`
-    * LIBHeight: the current LIBHeight of chain (unavailable in `Phase.1`)
-    * bestHeight: the current bestHeight of chain (unavailable in `Phase.1`)
-
-* `destory`: will be called when error happened, you can close the database connection
 
 ### Step.3
 
