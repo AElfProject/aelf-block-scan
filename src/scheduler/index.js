@@ -14,7 +14,7 @@ class Scheduler {
   constructor(options = defaultOptions) {
     this.config = {
       ...defaultOptions,
-      options
+      ...options
     };
     this.timerRef = null;
     this.paused = false;
