@@ -224,5 +224,6 @@ class Scanner {
 module.exports = {
   Scanner,
   DBBaseOperation,
+  Scheduler,
   QUERY_TYPE: constants.QUERY_TYPE
 };
