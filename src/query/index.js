@@ -25,7 +25,6 @@ class Query {
 
   async queryTransactionsByHeight(height) {
     this.logger.info(`start scan block transactions at height ${height}`);
-    console.time(`transaction ${height}`);
     const blockInfo = await this.config.aelf.chain.getBlockByHeight(height, true);
     const { Transactions: transactions } = blockInfo.Body;
     if (transactions.length > 0) {
@@ -48,7 +47,6 @@ class Query {
         transactions: transDetails
       };
     }
-    console.timeEnd(`transaction ${height}`);
     return {
       blockInfo,
       transactions: []
