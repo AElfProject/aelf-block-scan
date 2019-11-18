@@ -38,7 +38,7 @@ const defaultOptions = {
       }
     },
     categories: {
-      default: { appenders: ['transaction', 'block', 'common'], level: 'info' }
+      default: { appenders: ['common'], level: 'info' }
     }
   }
 };
@@ -72,6 +72,7 @@ class Scanner {
     }
     this.dbOperator = dbOperator;
     this.currentQueries = this.config.startHeight;
+    this.lastBestHeight = null;
     this.loopTimes = 0;
   }
 
@@ -106,18 +107,20 @@ class Scanner {
   }
 
   async queryMissingHeight() {
-    console.time(constants.QUERY_TYPE.MISSING);
     this.log4Common.info('start scan missing heights');
-    const missingResults = await this.queryBlockAndTxs(this.config.missingHeightList, constants.QUERY_TYPE.MISSING);
+    for (let i = 0; i <= this.config.missingHeightList.length; i += this.config.maxInsert) {
+      console.log('total', this.config.missingHeightList.length);
+      console.log('length', i, i + this.config.maxInsert);
+      const heights = this.config.missingHeightList.slice(i, i + this.config.maxInsert);
+      // eslint-disable-next-line no-await-in-loop
+      const maxInsertResults = await this.queryBlockAndTxs(heights, constants.QUERY_TYPE.MISSING);
+      // eslint-disable-next-line no-await-in-loop
+      await this.dbOperator.insert(maxInsertResults);
+    }
     this.log4Common.info('end scan missing heights');
-    this.log4Common.info('call insert hook');
-    await this.dbOperator.insert(missingResults);
-    this.log4Common.info('insert hook end');
-    console.timeEnd(constants.QUERY_TYPE.MISSING);
   }
 
   async queryGapHeight() {
-    console.time(constants.QUERY_TYPE.GAP);
     this.log4Common.info('start query gap heights');
     const { LIBHeight, height: bestHeight } = await this.getHeight();
     // leave height gap for buffer
@@ -142,7 +145,7 @@ class Scanner {
       leftHeights = currentHeight - this.config.startHeight;
     }
     this.currentQueries = currentHeight;
-    console.timeEnd(constants.QUERY_TYPE.GAP);
+    this.lastBestHeight = bestHeight;
   }
 
   async queryInLoop() {
@@ -154,6 +157,9 @@ class Scanner {
         height: currentHeight,
         LIBHeight
       } = await this.getHeight();
+      if (this.lastBestHeight && currentHeight <= this.lastBestHeight) {
+        return;
+      }
       const heightsLength = currentHeight - this.currentQueries || 0;
       // eslint-disable-next-line max-len
       const heights = new Array(heightsLength < 0 ? 0 : heightsLength).fill(1).map((_, index) => this.currentQueries + index + 1);
@@ -162,6 +168,7 @@ class Scanner {
       loopHeightsResult.bestHeight = currentHeight;
       await this.dbOperator.insert(loopHeightsResult);
       this.currentQueries = LIBHeight;
+      this.lastBestHeight = currentHeight;
       this.log4Common.info(`end loop for ${this.loopTimes} time`);
     });
     this.scheduler.startTimer();
