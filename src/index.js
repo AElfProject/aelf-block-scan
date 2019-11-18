@@ -161,7 +161,7 @@ class Scanner {
       if (
         this.lastBestHeight
         && currentHeight - this.lastBestHeight
-          <= Math.ceil(this.config.interval * this.config.minedSpeed * this.config.loopCoef)) {
+          <= Math.ceil(this.config.interval * this.config.minedSpeed * this.config.loopCoef / 1000)) {
         return;
       }
       const heightsLength = currentHeight - this.currentQueries || 0;
