@@ -32,23 +32,13 @@ const defaultOptions = {
   unconfirmedBlockBuffer: 60,
   log4Config: {
     appenders: {
-      transaction: {
+      common: {
         type: 'file',
-        filename: 'transaction.log'
-      },
-      block: {
-        type: 'file',
-        filename: 'block.log'
-      },
-      error: {
-        type: 'file',
-        filename: 'error.log'
+        filename: 'common.log'
       }
     },
     categories: {
-      default: { appenders: ['transaction', 'block', 'error'], level: 'info' },
-      transaction: { appenders: ['transaction'], level: 'info' },
-      block: { appenders: ['block'], level: 'info' }
+      default: { appenders: ['transaction', 'block', 'common'], level: 'info' }
     }
   }
 };
@@ -67,14 +57,13 @@ class Scanner {
       ...options
     };
     log4js.configure(this.config.log4Config);
-    this.log4Trans = log4js.getLogger('transaction');
     this.log4Common = log4js.getLogger();
     this.config.actualConcurrentQueryLimit = this.config.concurrentQueryLimit;
     this.query = new Query({
       pageSize: this.config.txResultsPageSize,
       transLimit: this.config.concurrentQueryLimit,
       aelf: this.config.aelfInstance
-    }, this.log4Trans);
+    }, this.log4Common);
     this.scheduler = new Scheduler({
       interval: this.config.interval
     });
