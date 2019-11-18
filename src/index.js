@@ -30,6 +30,9 @@ const defaultOptions = {
   maxInsert: 200,
   // unconfirmed block buffer
   unconfirmedBlockBuffer: 60,
+  // mined blocks every second
+  minedSpeed: 2,
+  loopCoef: 0.6,
   log4Config: {
     appenders: {
       common: {
@@ -109,8 +112,6 @@ class Scanner {
   async queryMissingHeight() {
     this.log4Common.info('start scan missing heights');
     for (let i = 0; i <= this.config.missingHeightList.length; i += this.config.maxInsert) {
-      console.log('total', this.config.missingHeightList.length);
-      console.log('length', i, i + this.config.maxInsert);
       const heights = this.config.missingHeightList.slice(i, i + this.config.maxInsert);
       // eslint-disable-next-line no-await-in-loop
       const maxInsertResults = await this.queryBlockAndTxs(heights, constants.QUERY_TYPE.MISSING);
@@ -157,7 +158,10 @@ class Scanner {
         height: currentHeight,
         LIBHeight
       } = await this.getHeight();
-      if (this.lastBestHeight && currentHeight <= this.lastBestHeight) {
+      if (
+        this.lastBestHeight
+        && currentHeight - this.lastBestHeight
+          <= Math.ceil(this.config.interval * this.config.minedSpeed * this.config.loopCoef)) {
         return;
       }
       const heightsLength = currentHeight - this.currentQueries || 0;
