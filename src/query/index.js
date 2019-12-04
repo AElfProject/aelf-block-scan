@@ -25,12 +25,12 @@ class Query {
 
   async queryTransactionsByHeight(height) {
     this.logger.info(`start scan block transactions at height ${height}`);
-    const blockInfo = await this.config.aelf.chain.getBlockByHeight(height, true);
-    const { Transactions: transactions } = blockInfo.Body;
-    if (transactions.length > 0) {
+    const blockInfo = await this.config.aelf.chain.getBlockByHeight(height, false);
+    const { TransactionsCount } = blockInfo.Body;
+    if (TransactionsCount > 0) {
       // this.logger.info('get block transactions');
       const queryArray = this.getAllTransactionsByPageSize(
-        transactions.length,
+        TransactionsCount,
         blockInfo.BlockHash,
         this.config.pageSize
       );
