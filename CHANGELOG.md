@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/AElfProject/aelf-block-scan/compare/v0.2.4...v0.3.0) (2020-02-08)
+
+
+### Build System
+
+* **deps:** bump eslint-utils from 1.4.0 to 1.4.3 ([c39ce2a](https://github.com/AElfProject/aelf-block-scan/commit/c39ce2a))
+* **deps:** bump handlebars from 4.1.2 to 4.7.2 ([ede082c](https://github.com/AElfProject/aelf-block-scan/commit/ede082c))
+
+
+### Features
+
+* 🎸 use cache when querying unconfirmed blocks ([49e186c](https://github.com/AElfProject/aelf-block-scan/commit/49e186c))
+
+
+
 ### [0.2.4](https://github.com/AElfProject/aelf-block-scan/compare/v0.2.3...v0.2.4) (2019-12-04)
 
 
