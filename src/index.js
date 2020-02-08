@@ -173,7 +173,7 @@ class Scanner {
       // eslint-disable-next-line max-len
       const heights = new Array(heightsLength < 0 ? 0 : heightsLength).fill(1).map((_, index) => this.currentQueries + index + 1);
       const LIBHeights = heights.filter(height => height <= LIBHeight);
-      const bestHeights = heights.filter(height => height > this.lastBestHeight);
+      const bestHeights = heights.filter(height => height > Math.max(this.lastBestHeight, LIBHeight));
       let loopHeightsResult = await this.queryBlockAndTxs([...LIBHeights, ...bestHeights], constants.QUERY_TYPE.LOOP);
       loopHeightsResult = this.mergeResult(
         loopHeightsResult,
@@ -203,6 +203,7 @@ class Scanner {
     const afterResultTxs = results.txs.slice(preHeightsLength);
     const lastResultBlocks = [];
     const lastResultTxs = [];
+
     this.lastLoopResult.blocks.forEach((block, index) => {
       const { Header: { Height } } = block;
       if (parseInt(Height, 10) > LIBHeight && parseInt(Height, 10) <= lastBestHeight) {
