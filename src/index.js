@@ -76,6 +76,10 @@ class Scanner {
     this.dbOperator = dbOperator;
     this.currentQueries = this.config.startHeight;
     this.lastBestHeight = null;
+    this.lastLoopResult = {
+      blocks: [],
+      txs: []
+    };
     this.loopTimes = 0;
   }
 
@@ -162,20 +166,55 @@ class Scanner {
         this.lastBestHeight
         && currentHeight - this.lastBestHeight
           <= Math.ceil(this.config.interval * this.config.minedSpeed * this.config.loopCoef / 1000)) {
+        console.log('jump this loop');
         return;
       }
       const heightsLength = currentHeight - this.currentQueries || 0;
       // eslint-disable-next-line max-len
       const heights = new Array(heightsLength < 0 ? 0 : heightsLength).fill(1).map((_, index) => this.currentQueries + index + 1);
-      const loopHeightsResult = await this.queryBlockAndTxs(heights, constants.QUERY_TYPE.LOOP);
+      const LIBHeights = heights.filter(height => height <= LIBHeight);
+      const bestHeights = heights.filter(height => height > this.lastBestHeight);
+      let loopHeightsResult = await this.queryBlockAndTxs([...LIBHeights, ...bestHeights], constants.QUERY_TYPE.LOOP);
+      loopHeightsResult = this.mergeResult(
+        loopHeightsResult,
+        LIBHeights.length,
+        bestHeights.length,
+        LIBHeight,
+        this.lastBestHeight
+      );
       loopHeightsResult.LIBHeight = LIBHeight;
       loopHeightsResult.bestHeight = currentHeight;
       await this.dbOperator.insert(loopHeightsResult);
+      this.lastLoopResult = loopHeightsResult;
       this.currentQueries = LIBHeight;
       this.lastBestHeight = currentHeight;
       this.log4Common.info(`end loop for ${this.loopTimes} time`);
     });
     this.scheduler.startTimer();
+  }
+
+  mergeResult(results, preHeightsLength, afterHeightsLength, LIBHeight, lastBestHeight) {
+    if (this.lastLoopResult.blocks.length === 0) {
+      return results;
+    }
+    const preResultBlocks = results.blocks.slice(0, preHeightsLength);
+    const afterResultBlocks = results.blocks.slice(preHeightsLength);
+    const preResultTxs = results.txs.slice(0, preHeightsLength);
+    const afterResultTxs = results.txs.slice(preHeightsLength);
+    const lastResultBlocks = [];
+    const lastResultTxs = [];
+    this.lastLoopResult.blocks.forEach((block, index) => {
+      const { Header: { Height } } = block;
+      if (parseInt(Height, 10) > LIBHeight && parseInt(Height, 10) <= lastBestHeight) {
+        lastResultBlocks.push(block);
+        lastResultTxs.push(this.lastLoopResult.txs[index]);
+      }
+    });
+    return {
+      blocks: [...preResultBlocks, ...lastResultBlocks, ...afterResultBlocks],
+      txs: [...preResultTxs, ...lastResultTxs, ...afterResultTxs],
+      type: results.type
+    };
   }
 
   async getHeight() {
