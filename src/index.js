@@ -18,14 +18,18 @@ const defaultOptions = {
   // max queries in parallel
   concurrentQueryLimit: 40,
   // query from this height, include this height
-  startHeight: 0,
+  startHeight: 1,
   // If the differences between startHeight and last irreversible block height
   // is lower than heightGap, start loop just now
   // heightGap: 50,
   // missing height list, the heights you want to query and insert
   missingHeightList: [],
+  // scanMode, value can be `all` or `listener`, default to be all
+  scanMode: 'all',
+  // listeners for scanMode: 'listener'
+  listeners: [],
   // the instance of aelf-sdk
-  aelfInstance: new AElf(new AElf.providers.HttpProvider('http:127.0.0.1:8000/')),
+  aelfInstance: new AElf(new AElf.providers.HttpProvider('http:127.0.0.1:8000')),
   // max insert Data
   maxInsert: 200,
   // unconfirmed block buffer
@@ -59,6 +63,13 @@ class Scanner {
       ...this.config,
       ...options
     };
+    const {
+      scanMode,
+      listeners
+    } = this.config;
+    if (scanMode === 'listener' && Array.from(new Set(listeners.map(v => v.tag))).length < listeners.length) {
+      throw new Error('duplicated listener names are not allowed');
+    }
     log4js.configure(this.config.log4Config);
     this.log4Common = log4js.getLogger();
     this.config.actualConcurrentQueryLimit = this.config.concurrentQueryLimit;
@@ -172,20 +183,29 @@ class Scanner {
       const heightsLength = currentHeight - this.currentQueries || 0;
       // eslint-disable-next-line max-len
       const heights = new Array(heightsLength < 0 ? 0 : heightsLength).fill(1).map((_, index) => this.currentQueries + index + 1);
-      const LIBHeights = heights.filter(height => height <= LIBHeight);
-      const bestHeights = heights.filter(height => height > Math.max(this.lastBestHeight, LIBHeight));
-      let loopHeightsResult = await this.queryBlockAndTxs([...LIBHeights, ...bestHeights], constants.QUERY_TYPE.LOOP);
-      loopHeightsResult = this.mergeResult(
-        loopHeightsResult,
-        LIBHeights.length,
-        bestHeights.length,
-        LIBHeight,
-        this.lastBestHeight
-      );
-      loopHeightsResult.LIBHeight = LIBHeight;
-      loopHeightsResult.bestHeight = currentHeight;
-      await this.dbOperator.insert(loopHeightsResult);
-      this.lastLoopResult = loopHeightsResult;
+      if (this.config.scanMode === 'all') {
+        const LIBHeights = heights.filter(height => height <= LIBHeight);
+        const bestHeights = heights.filter(height => height > Math.max(this.lastBestHeight, LIBHeight));
+        let loopHeightsResult = await this.queryBlockAndTxs([...LIBHeights, ...bestHeights], constants.QUERY_TYPE.LOOP);
+        loopHeightsResult = this.mergeResult(
+          loopHeightsResult,
+          LIBHeights.length,
+          bestHeights.length,
+          LIBHeight,
+          this.lastBestHeight
+        );
+        loopHeightsResult.LIBHeight = LIBHeight;
+        loopHeightsResult.bestHeight = currentHeight;
+        await this.dbOperator.insert(loopHeightsResult);
+        this.lastLoopResult = loopHeightsResult;
+      } else if (this.config.scanMode === 'listener') {
+        const loopHeightsResult = await this.queryBlockAndTxs(heights, constants.QUERY_TYPE.LOOP);
+        loopHeightsResult.LIBHeight = LIBHeight;
+        loopHeightsResult.bestHeight = currentHeight;
+        await this.dbOperator.insert(loopHeightsResult);
+      } else {
+        throw new Error('Invalid scan mode');
+      }
       this.currentQueries = LIBHeight;
       this.lastBestHeight = currentHeight;
       this.log4Common.info(`end loop for ${this.loopTimes} time`);
@@ -229,13 +249,47 @@ class Scanner {
     };
   }
 
-  /**
-   * return block information and transaction results
-   * @param {Number[]} heights the array of heights
-   * @param {string} type the type of query
-   * @return {Promise<{blocks: *, txs: *}>}
-   */
-  async queryBlockAndTxs(heights = [], type = 'loop') {
+  async queryBlockAndTxsWithBloom(heights = [], type = 'loop') {
+    const {
+      listeners
+    } = this.config;
+    let results = [];
+    for (let i = 0; i < heights.length; i += this.config.concurrentQueryLimit) {
+      const heightsLimited = heights.slice(i, i + this.config.concurrentQueryLimit);
+      // eslint-disable-next-line no-await-in-loop,max-len
+      const blocksAndTxs = await Promise.all(heightsLimited.map(v => this.query.queryBlocksAndTxsByBloom(v, listeners)));
+      results = [...results, ...blocksAndTxs];
+    }
+    const tags = listeners.map(v => v.tag);
+    const tagsObj = tags.reduce((acc, tag) => ({
+      ...acc,
+      [tag]: {
+        blocks: []
+      }
+    }), {});
+    results = results.filter(v => v && v.block).reduce((acc, v) => {
+      const {
+        block,
+        transactions
+      } = v;
+      const {
+        scanTags
+      } = block;
+      // eslint-disable-next-line no-restricted-syntax
+      for (const tag of scanTags) {
+        block.transactionList = transactions.filter(tx => tx.scanTags.includes(tag));
+        acc[tag].blocks.push(block);
+      }
+      return acc;
+    }, tagsObj);
+    return {
+      largestHeight: heights.length > 0 ? heights[heights.length - 1] : this.config.startHeight,
+      results,
+      type
+    };
+  }
+
+  async queryAllBlocksAndTxs(heights = [], type = 'loop') {
     const results = [];
     this.log4Common.info(`start query block in parallel ${this.config.concurrentQueryLimit}`);
     for (let i = 0; i < heights.length; i += this.config.concurrentQueryLimit) {
@@ -258,6 +312,22 @@ class Scanner {
       txs,
       type
     };
+  }
+
+  /**
+   * return block information and transaction results
+   * @param {Number[]} heights the array of heights
+   * @param {string} type the type of query
+   * @return {Promise<{blocks: *, txs: *}>}
+   */
+  async queryBlockAndTxs(heights = [], type = 'loop') {
+    if (this.config.scanMode === 'all') {
+      return this.queryAllBlocksAndTxs(heights, type);
+    }
+    if (this.config.scanMode === 'listener') {
+      return this.queryBlockAndTxsWithBloom(heights, type);
+    }
+    throw new Error('Invalid scan mode');
   }
 }
 

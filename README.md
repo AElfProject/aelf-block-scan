@@ -30,12 +30,12 @@ const aelf = new AElf(new AElf.providers.HttpProvider('http://18.162.41.20:8000'
 
 Implement the `DBBaseOperation` class.
 
-There are three phases while scanning, and all phases can be identified by the `type` filed in `insert` function argument `data` 
+There are three phases while scanning, and all phases can be identified by the `type` filed in `insert` function argument `data`
 * Phase.1: scanning the `missingHeights` given by the `config`;
 * Phase.2: scanning blocks and transactions from `startHeight` to `LIBHeight`;
-* Phase.3: scanning in loop, from the last `LIBHeight` got from previous loop to current `bestHeight` in current loop.  
+* Phase.3: scanning in loop, from the last `LIBHeight` got from previous loop to current `bestHeight` in current loop.
 
-In all phases, query blocks and transactions with a maximal concurrent limit. 
+In all phases, query blocks and transactions with a maximal concurrent limit.
 
 There are three methods that must be implemented in sub-class of `DBBaseOperation`
 
@@ -47,6 +47,16 @@ is an object and contains three fields:
     * LIBHeight: the current LIBHeight of chain (unavailable in `Phase.1`)
     * bestHeight: the current bestHeight of chain (unavailable in `Phase.1`)
 * `destory`: called when error happening or exiting from the scanning process, you can close the database connection
+
+***Notice***:
+1. Notice that we query all the blocks and transactions inside blocks, and it increases the pressure of chain node.
+    However we don't need all blocks and transactions for most of time, so we provide a new scan mode called `listener`
+    which can get the blocks and transactions you are interested in by bloom filter. With bloom filter, you can judge whether an
+    event is in a block or transaction, with this, `aelf-block-scan` can give only what you are interested in.
+2. And how to use this, you only need to set the config `scanMode` to the value of `listener` and create a new array `listeners` in
+   the config. Check the example [listener.js](./example/listeners.js) for more detail.
+
+
 
 ```javascript
 const {
@@ -60,7 +70,7 @@ class DBOperation extends DBBaseOperation {
     super(config);
     this.lastTime = new Date().getTime();
   }
-  
+
   /**
    * init before starting scanning
    */
@@ -116,7 +126,7 @@ class DBOperation extends DBBaseOperation {
     }
     console.log('\n\n\n');
   }
-  
+
   /**
    * close sql connection or something
    */
@@ -152,7 +162,7 @@ const defaultOptions = {
   missingHeightList: [],
   // the instance of aelf-sdk
   aelfInstance: new AElf(new AElf.providers.HttpProvider('http:127.0.0.1:8000/')),
-  // max inserted Data into database 
+  // max inserted Data into database
   maxInsert: 200,
   // unconfirmed block buffer
   unconfirmedBlockBuffer: 60,
@@ -199,7 +209,7 @@ const scanner = new Scanner(new DBOperation(), {
   maxInsert: 100
 });
 scanner.start().then(res => {
-  // in Phase.3 loop
+  // here we just start Phase.3 loop
   console.log(res);
 }).catch(err => {
   console.log(err);

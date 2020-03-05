@@ -50,9 +50,19 @@ function usedMemoryRate() {
   return (1 - os.freemem() / os.totalmem()) * 100;
 }
 
+function bloomChecker(checker, bloom) {
+  try {
+    return checker(bloom);
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+}
+
 module.exports = {
   noImplementMethodError,
   noop,
+  bloomChecker,
   cpuUsage,
   usedMemoryRate
 };
