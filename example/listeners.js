@@ -50,6 +50,7 @@ class DBOperation extends DBBaseOperation {
       bestHeight,
       LIBHeight
     } = data;
+    console.log(data);
     switch (type) {
       case QUERY_TYPE.INIT:
         console.log('INIT');
@@ -97,6 +98,7 @@ class DBOperation extends DBBaseOperation {
       // eslint-disable-next-line max-len
       console.log(`Block ${block.BlockHash} has tags ${JSON.stringify(scanTags)} with transactions ${transactionList.map(v => v.TransactionId)}\n\n`);
     });
+    console.log(results);
     console.log('\n\n\n');
   }
 
@@ -110,7 +112,7 @@ class DBOperation extends DBBaseOperation {
 
 const scanner = new Scanner(new DBOperation(), {
   aelfInstance: aelf,
-  startHeight: 1,
+  startHeight: 720,
   interval: 8000,
   scanMode: 'listener',
   listeners: [

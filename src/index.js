@@ -277,13 +277,15 @@ class Scanner {
       } = block;
       // eslint-disable-next-line no-restricted-syntax
       for (const tag of scanTags) {
-        block.transactionList = transactions.filter(tx => tx.scanTags.includes(tag));
-        acc[tag].blocks.push(block);
+        acc[tag].blocks.push({
+          ...block,
+          transactionList: transactions.filter(tx => tx.scanTags.includes(tag))
+        });
       }
       return acc;
     }, tagsObj);
     return {
-      largestHeight: heights.length > 0 ? heights[heights.length - 1] : this.config.startHeight,
+      largestHeight: heights.length > 0 ? heights[heights.length - 1] : this.config.startHeight - 1,
       results,
       type
     };
