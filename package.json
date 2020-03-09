@@ -1,6 +1,6 @@
 {
   "name": "aelf-block-scan",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "An AElf block scanner",
   "main": "src/index.js",
   "scripts": {
