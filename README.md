@@ -16,7 +16,7 @@ yarn
 
 ## Usage
 
-Check the `example/index.js` as a reference
+Check the `example/index.js` as a reference in [ the repo of aelf-block-scan](https://github.com/AElfProject/aelf-block-scan).
 
 ### Step.1
 
