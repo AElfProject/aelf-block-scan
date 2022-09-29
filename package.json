@@ -15,7 +15,7 @@
   "dependencies": {
     "aelf-sdk": "^3.2.40",
     "cross-env": "^5.2.0",
-    "log4js": "^3.0.5"
+    "log4js": "^6.4.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.0.2",
