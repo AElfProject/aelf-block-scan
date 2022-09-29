@@ -11,7 +11,7 @@ A tool to scan the AElf Chain.
 npm i aelf-block-scan --save
 
 # use yarn
-yarn
+yarn aelf-block-scan
 ```
 
 ## Usage
