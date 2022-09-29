@@ -1,6 +1,6 @@
 {
   "name": "aelf-block-scan",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "An AElf block scanner",
   "main": "src/index.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "node": "10.x || 11.x || 12.x"
   },
   "dependencies": {
-    "aelf-sdk": "^3.2.29",
+    "aelf-sdk": "^3.2.40",
     "cross-env": "^5.2.0",
     "log4js": "^3.0.5"
   },
