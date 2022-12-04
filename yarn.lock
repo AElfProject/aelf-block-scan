@@ -505,10 +505,10 @@ acorn@^6.0.1, acorn@^6.0.7:
   version "6.2.1"
   resolved "https://registry.npm.taobao.org/acorn/download/acorn-6.2.1.tgz#3ed8422d6dec09e6121cc7a843ca86a330a86b51"
 
-aelf-sdk@^3.2.29:
-  version "3.2.29"
-  resolved "https://registry.yarnpkg.com/aelf-sdk/-/aelf-sdk-3.2.29.tgz#fc08ec8797ecea54ae4ad954df1b10e9782bbc08"
-  integrity sha512-hqttfzyrymSezwxioLbv4g2zGU9wlmBMmRnlMSyimbxnVnAH7G/Azbm2uRZ1Ld0IrR8voTOlFm9v76+EXm8TRw==
+aelf-sdk@^3.2.40:
+  version "3.2.41"
+  resolved "https://registry.yarnpkg.com/aelf-sdk/-/aelf-sdk-3.2.41.tgz#6e2df4cd57e884a7c06b1cc1fa73634e7306e3cd"
+  integrity sha512-1Iq/wTNRUMYMgptzxNgWVFq9MJAYBkX/Q+XU+emZIpx8gqAE+fN3ph1FnWEMjnzkg47HAKwXmXYYmc95kWMAAw==
   dependencies:
     "@aelfqueen/protobufjs" "^6.8.9"
     "@babel/runtime" "^7.4.5"
@@ -1456,8 +1456,9 @@ decamelize@^1.1.0, decamelize@^1.1.2, decamelize@^1.2.0:
   resolved "https://registry.npm.taobao.org/decamelize/download/decamelize-1.2.0.tgz#f6534d15148269b20352e7bee26f501f9a191290"
 
 decode-uri-component@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.npm.taobao.org/decode-uri-component/download/decode-uri-component-0.2.0.tgz#eb3913333458775cb84cd1a1fae062106bb87545"
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.2.tgz#e69dbe25d37941171dd540e024c444cd5188e1e9"
+  integrity sha512-FqUYQ+8o158GyGTrMFJms9qh3CqTKvAqgqsTnkLI8sKu0028orqBhxNMFkFen0zGyg6epACD32pjVk58ngIErQ==
 
 dedent@0.7.0, dedent@^0.7.0:
   version "0.7.0"
