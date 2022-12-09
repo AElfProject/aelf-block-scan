@@ -505,10 +505,10 @@ acorn@^6.0.1, acorn@^6.0.7:
   version "6.2.1"
   resolved "https://registry.npm.taobao.org/acorn/download/acorn-6.2.1.tgz#3ed8422d6dec09e6121cc7a843ca86a330a86b51"
 
-aelf-sdk@^3.2.29:
-  version "3.2.29"
-  resolved "https://registry.yarnpkg.com/aelf-sdk/-/aelf-sdk-3.2.29.tgz#fc08ec8797ecea54ae4ad954df1b10e9782bbc08"
-  integrity sha512-hqttfzyrymSezwxioLbv4g2zGU9wlmBMmRnlMSyimbxnVnAH7G/Azbm2uRZ1Ld0IrR8voTOlFm9v76+EXm8TRw==
+aelf-sdk@^3.2.40:
+  version "3.2.41"
+  resolved "https://registry.yarnpkg.com/aelf-sdk/-/aelf-sdk-3.2.41.tgz#6e2df4cd57e884a7c06b1cc1fa73634e7306e3cd"
+  integrity sha512-1Iq/wTNRUMYMgptzxNgWVFq9MJAYBkX/Q+XU+emZIpx8gqAE+fN3ph1FnWEMjnzkg47HAKwXmXYYmc95kWMAAw==
   dependencies:
     "@aelfqueen/protobufjs" "^6.8.9"
     "@babel/runtime" "^7.4.5"
@@ -4305,8 +4305,9 @@ q@^1.5.1:
   resolved "https://registry.npm.taobao.org/q/download/q-1.5.1.tgz#7e32f75b41381291d04611f1bf14109ac00651d7"
 
 qs@~6.5.2:
-  version "6.5.2"
-  resolved "https://registry.npm.taobao.org/qs/download/qs-6.5.2.tgz#cb3ae806e8740444584ef154ce8ee98d403f3e36"
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.3.tgz#3aeeffc91967ef6e35c0e488ef46fb296ab76aad"
+  integrity sha512-qxXIEh4pCGfHICj1mAJQ2/2XVZkjCDTcEgfoSQxc/fYivUZxTkk7L3bDBJSoNrEzXI17oUO5Dp07ktqE5KzczA==
 
 query-string@5.1.1:
   version "5.1.1"
